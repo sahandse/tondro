@@ -3,6 +3,10 @@ set -euo pipefail
 
 flutter create --platforms=android --org ir.tondro --project-name tondro .
 
+# Remove Flutter template/demo files that are not part of Tondro.
+rm -f test/widget_test.dart tondro.iml
+rm -rf .idea
+
 python3 - <<'PY'
 from pathlib import Path
 
