@@ -107,6 +107,30 @@ class BackgroundDownloadService {
 
   Future<bool> cancel(String id) => _downloader.cancelTaskWithId(id);
 
+  Future<bool> openFile(String filePath) {
+    return _downloader.openFile(filePath: filePath);
+  }
+
+  Future<void> configureNotifications(bool enabled) async {
+    if (enabled) {
+      await _downloader.configureNotification(
+        running: const TaskNotification('تندرو', 'در حال دانلود {filename}'),
+        complete: const TaskNotification('دانلود کامل شد', '{filename}'),
+        error: const TaskNotification('دانلود ناموفق بود', '{filename}'),
+        paused: const TaskNotification('دانلود متوقف شد', '{filename}'),
+        progressBar: true,
+        tapOpensFile: true,
+      );
+    } else {
+      await _downloader.configureNotification(
+        running: null,
+        complete: null,
+        error: null,
+        paused: null,
+      );
+    }
+  }
+
   Future<void> dispose() async {
     await _updatesSub?.cancel();
     _updatesSub = null;
