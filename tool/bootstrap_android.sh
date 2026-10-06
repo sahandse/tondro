@@ -31,12 +31,27 @@ if gradle.exists():
 manifest = Path("android/app/src/main/AndroidManifest.xml")
 if manifest.exists():
     text = manifest.read_text(encoding="utf-8")
-    permission = '<uses-permission android:name="android.permission.INTERNET"/>'
-    if permission not in text:
-        text = text.replace("<manifest", "<manifest", 1)
-        first_close = text.find(">")
-        text = text[:first_close+1] + "\n    " + permission + text[first_close+1:]
+    permissions = [
+        '<uses-permission android:name="android.permission.INTERNET"/>',
+        '<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>',
+    ]
+    first_close = text.find(">")
+    for permission in permissions:
+        if permission not in text:
+            text = text[:first_close+1] + "\n    " + permission + text[first_close+1:]
+            first_close = text.find(">")
+
     text = text.replace('android:label="tondro"', 'android:label="تندرو"')
+    text = text.replace(
+        'android:name=".MainActivity"',
+        'android:name=".MainActivity"\n            android:launchMode="singleTask"',
+    )
+
+    share_filter = '''\n            <intent-filter>\n                <action android:name="android.intent.action.SEND" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <data android:mimeType="text/*" />\n            </intent-filter>\n'''
+    if 'android.intent.action.SEND' not in text:
+        marker = '</activity>'
+        text = text.replace(marker, share_filter + '        ' + marker, 1)
+
     manifest.write_text(text, encoding="utf-8")
 PY
 
