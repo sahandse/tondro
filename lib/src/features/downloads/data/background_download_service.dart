@@ -124,7 +124,7 @@ class BackgroundDownloadService {
         tapOpensFile: true,
       );
     } else {
-      await _downloader.configureNotification(
+      _downloader.configureNotification(
         running: null,
         complete: null,
         error: null,
