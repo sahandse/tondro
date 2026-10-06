@@ -252,12 +252,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                activeCount == 0 ? 'آماده برای دانلود' : activeCount.toString() + ' دانلود فعال',
+                                activeCount == 0 ? 'آماده برای دانلود' : '$activeCount دانلود فعال',
                                 style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                totalSpeed > 0 ? _formatTotalSpeed(totalSpeed) + ' مجموع سرعت' : 'Tondro XP Mono • Fast & Simple',
+                                totalSpeed > 0 ? '${_formatTotalSpeed(totalSpeed)} مجموع سرعت' : 'Tondro XP Mono • Fast & Simple',
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),
@@ -667,12 +667,12 @@ class _StatBox extends StatelessWidget {
 
 String _formatTotalSpeed(double bytesPerSecond) {
   if (bytesPerSecond >= 1024 * 1024) {
-    return (bytesPerSecond / (1024 * 1024)).toStringAsFixed(1) + ' MB/s';
+    return '${(bytesPerSecond / (1024 * 1024)).toStringAsFixed(1)} MB/s';
   }
   if (bytesPerSecond >= 1024) {
-    return (bytesPerSecond / 1024).toStringAsFixed(0) + ' KB/s';
+    return '${(bytesPerSecond / 1024).toStringAsFixed(0)} KB/s';
   }
-  return bytesPerSecond.toStringAsFixed(0) + ' B/s';
+  return '${bytesPerSecond.toStringAsFixed(0)} B/s';
 }
 
 
