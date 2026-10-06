@@ -48,7 +48,7 @@ class BackgroundDownloadService {
   }
 
   Future<void> ensureNotificationPermission() async {
-    final permissionType = PermissionType.notifications;
+    const permissionType = PermissionType.notifications;
     var status = await _downloader.permissions.status(permissionType);
     if (status == PermissionStatus.granted) return;
     status = await _downloader.permissions.request(permissionType);
