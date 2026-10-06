@@ -27,11 +27,7 @@ jobs:
           cache: true
 
       - name: Generate Android platform
-        run: |
-          flutter create --platforms=android --org ir.tondro --project-name tondro .
-          if [ -f android/app/build.gradle.kts ]; then
-            sed -i 's/applicationId = "ir.tondro.tondro"/applicationId = "ir.tondro.app"/' android/app/build.gradle.kts
-          fi
+        run: bash tool/bootstrap_android.sh
 
       - name: Get packages
         run: flutter pub get
