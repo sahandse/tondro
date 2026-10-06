@@ -13,6 +13,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late final DownloadsController _controller;
+  String _filter = 'all';
+  String _sort = 'newest';
 
   @override
   void initState() {
@@ -90,10 +92,48 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Widget _filterChip(String value, String label) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8),
+      child: ChoiceChip(
+        label: Text(label),
+        selected: _filter == value,
+        onSelected: (_) => setState(() => _filter = value),
+      ),
+    );
+  }
+
+  List<DownloadItem> _visibleItems(List<DownloadItem> source) {
+    final list = source.where((item) {
+      final category = detectDownloadCategory(item.fileName);
+      return switch (_filter) {
+        'active' => item.status == DownloadStatus.downloading || item.status == DownloadStatus.queued,
+        'completed' => item.status == DownloadStatus.completed,
+        'image' => category == DownloadCategory.image,
+        'video' => category == DownloadCategory.video,
+        'audio' => category == DownloadCategory.audio,
+        'document' => category == DownloadCategory.document,
+        'archive' => category == DownloadCategory.archive,
+        _ => true,
+      };
+    }).toList();
+
+    switch (_sort) {
+      case 'oldest':
+        list.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      case 'name':
+        list.sort((a, b) => a.fileName.toLowerCase().compareTo(b.fileName.toLowerCase()));
+      case 'size':
+        list.sort((a, b) => b.totalBytes.compareTo(a.totalBytes));
+      default:
+        list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    }
+    return list;
+  }
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final items = _controller.items;
+    final items = _visibleItems(_controller.items);
 
     return Scaffold(
       appBar: AppBar(
@@ -130,7 +170,43 @@ class _HomePageState extends State<HomePage> {
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-              const SizedBox(height: 22),
+              const SizedBox(height: 14),
+              SizedBox(
+                height: 42,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    _filterChip('all', 'همه'),
+                    _filterChip('active', 'فعال'),
+                    _filterChip('completed', 'تکمیل‌شده'),
+                    _filterChip('image', 'تصویر'),
+                    _filterChip('video', 'ویدیو'),
+                    _filterChip('audio', 'صوت'),
+                    _filterChip('document', 'سند'),
+                    _filterChip('archive', 'آرشیو'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: PopupMenuButton<String>(
+                  tooltip: 'مرتب‌سازی',
+                  initialValue: _sort,
+                  onSelected: (value) => setState(() => _sort = value),
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(value: 'newest', child: Text('جدیدترین')),
+                    PopupMenuItem(value: 'oldest', child: Text('قدیمی‌ترین')),
+                    PopupMenuItem(value: 'name', child: Text('نام فایل')),
+                    PopupMenuItem(value: 'size', child: Text('حجم فایل')),
+                  ],
+                  child: const Chip(
+                    avatar: Icon(Icons.sort_rounded, size: 18),
+                    label: Text('مرتب‌سازی'),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
               Expanded(
                 child: _controller.loading
                     ? const Center(child: CircularProgressIndicator())
