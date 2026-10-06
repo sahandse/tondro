@@ -21,7 +21,7 @@ class BackgroundDownloadService {
     queue.maxConcurrent = maxConcurrent.clamp(1, 5);
     queue.maxConcurrentByHost = 2;
     queue.minInterval = const Duration(milliseconds: 150);
-    _downloader.add(queue);
+    _downloader.addTaskQueue(queue);
 
     _updatesSub ??= _downloader.updates.listen((update) {
       if (update is TaskStatusUpdate) {
