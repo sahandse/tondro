@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/theme/theme_controller.dart';
 import '../../downloads/presentation/downloads_controller.dart';
 
 class DownloadSettingsPage extends StatefulWidget {
@@ -25,6 +26,41 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
+          _SectionCard(
+            title: 'ظاهر',
+            children: [
+              RadioGroup<ThemeMode>(
+                groupValue: ThemeController.instance.mode,
+                onChanged: (value) async {
+                  if (value == null) return;
+                  await ThemeController.instance.setMode(value);
+                  if (mounted) setState(() {});
+                },
+                child: const Column(
+                  children: [
+                    RadioListTile<ThemeMode>(
+                      value: ThemeMode.system,
+                      title: Text('همگام با سیستم'),
+                      secondary: Icon(Icons.brightness_auto_rounded),
+                    ),
+                    Divider(height: 1),
+                    RadioListTile<ThemeMode>(
+                      value: ThemeMode.light,
+                      title: Text('روشن'),
+                      secondary: Icon(Icons.light_mode_rounded),
+                    ),
+                    Divider(height: 1),
+                    RadioListTile<ThemeMode>(
+                      value: ThemeMode.dark,
+                      title: Text('تیره'),
+                      secondary: Icon(Icons.dark_mode_rounded),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
           _SectionCard(
             title: 'اتصال و صف',
             children: [
