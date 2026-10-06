@@ -161,6 +161,9 @@ class DownloadsController extends ChangeNotifier {
   }
 
   Future<void> _enqueue(DownloadItem item) async {
+    if (_settings.notifications) {
+      await _service.ensureNotificationPermission();
+    }
     if (_settings.speedLimitKbps > 0) {
       _pumpThrottledQueue();
       return;
