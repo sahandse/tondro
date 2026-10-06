@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../downloads/domain/download_category.dart';
 import '../../downloads/domain/download_item.dart';
 import '../../downloads/presentation/downloads_controller.dart';
 
@@ -301,12 +302,15 @@ class _DownloadCard extends StatelessWidget {
 
   String _subtitle(DownloadItem item) {
     final status = _statusLabel(item.status);
-    if (item.status != DownloadStatus.downloading) return status;
+    final category = categoryLabelFa(detectDownloadCategory(item.fileName));
+    if (item.status != DownloadStatus.downloading) return '$status • $category';
 
     final speed = _formatSpeed(item.speedBytesPerSecond);
     final eta = _formatEta(item.eta);
     if (speed == null) return status;
-    return eta == null ? '$status • $speed' : '$status • $speed • $eta مانده';
+    return eta == null
+        ? '$status • $category • $speed'
+        : '$status • $category • $speed • $eta مانده';
   }
 
   String _statusLabel(DownloadStatus status) => switch (status) {
