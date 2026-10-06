@@ -185,6 +185,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final items = _visibleItems(_controller.items);
+    final allItems = _controller.items;
+    final activeCount = allItems.where((e) => e.status == DownloadStatus.downloading).length;
+    final queuedCount = allItems.where((e) => e.status == DownloadStatus.queued).length;
+    final completedCount = allItems.where((e) => e.status == DownloadStatus.completed).length;
+    final totalSpeed = allItems.where((e) => e.status == DownloadStatus.downloading).fold<double>(0, (sum, e) => sum + e.speedBytesPerSecond);
 
     return Scaffold(
       appBar: AppBar(
@@ -228,18 +233,53 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'دانلودها',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
+              XpWindowFrame(
+                title: 'Tondro.exe',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        const TondroLogo(size: 62),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                activeCount == 0 ? 'آماده برای دانلود' : activeCount.toString() + ' دانلود فعال',
+                                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                totalSpeed > 0 ? _formatTotalSpeed(totalSpeed) + ' مجموع سرعت' : 'Tondro XP Mono • Fast & Simple',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: _showAddDownload,
+                      icon: const Icon(Icons.add_rounded),
+                      label: const Text('دانلود جدید'),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 6),
-              Text(
-                'سریع، مرتب و بدون شلوغی',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(child: _StatBox(icon: Icons.downloading_rounded, value: activeCount.toString(), label: 'فعال')),
+                  const SizedBox(width: 8),
+                  Expanded(child: _StatBox(icon: Icons.hourglass_bottom_rounded, value: queuedCount.toString(), label: 'صف')),
+                  const SizedBox(width: 8),
+                  Expanded(child: _StatBox(icon: Icons.check_box_outlined, value: completedCount.toString(), label: 'کامل')),
+                ],
               ),
               const SizedBox(height: 14),
               SizedBox(
@@ -524,4 +564,55 @@ class _DownloadCard extends StatelessWidget {
     }
     return '${duration.inSeconds}ث';
   }
+}
+
+
+class _StatBox extends StatelessWidget {
+  const _StatBox({
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        border: Border.all(color: theme.colorScheme.outline),
+        borderRadius: BorderRadius.circular(7),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: theme.brightness == Brightness.dark ? .35 : .12),
+            offset: const Offset(2, 2),
+            blurRadius: 0,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 19),
+          const SizedBox(height: 5),
+          Text(value, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+          Text(label, style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        ],
+      ),
+    );
+  }
+}
+
+String _formatTotalSpeed(double bytesPerSecond) {
+  if (bytesPerSecond >= 1024 * 1024) {
+    return (bytesPerSecond / (1024 * 1024)).toStringAsFixed(1) + ' MB/s';
+  }
+  if (bytesPerSecond >= 1024) {
+    return (bytesPerSecond / 1024).toStringAsFixed(0) + ' KB/s';
+  }
+  return bytesPerSecond.toStringAsFixed(0) + ' B/s';
 }
