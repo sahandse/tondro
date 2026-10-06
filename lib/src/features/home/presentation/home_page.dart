@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
+import '../../../app/widgets/tondro_brand.dart';
+
 import '../../downloads/domain/download_category.dart';
 import '../../downloads/domain/download_item.dart';
 import '../../downloads/presentation/downloads_controller.dart';
@@ -23,6 +25,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   String? _lastClipboardUrl;
   String _filter = 'all';
   String _sort = 'newest';
+  int _navIndex = 0;
 
   @override
   void initState() {
@@ -185,7 +188,20 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('تندرو'),
+        titleSpacing: 16,
+        title: Row(
+          children: [
+            const TondroLogo(size: 38),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('تندرو', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900, height: 1.05)),
+                Text('XP MONO', style: theme.textTheme.labelSmall?.copyWith(letterSpacing: 1.8, color: theme.colorScheme.onSurfaceVariant)),
+              ],
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             tooltip: 'تنظیمات',
