@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../data/download_store.dart';
 import '../data/http_download_service.dart';
+import '../domain/download_category.dart';
 import '../domain/download_item.dart';
 
 class DownloadsController extends ChangeNotifier {
@@ -56,15 +57,18 @@ class DownloadsController extends ChangeNotifier {
     }
 
     final directory = await getApplicationDocumentsDirectory();
-    final downloadsDir = Directory('${directory.path}/downloads');
-    if (!await downloadsDir.exists()) {
-      await downloadsDir.create(recursive: true);
-    }
 
     final fallbackName = 'download-${DateTime.now().millisecondsSinceEpoch}';
     final fileName = uri.pathSegments.isNotEmpty && uri.pathSegments.last.isNotEmpty
         ? Uri.decodeComponent(uri.pathSegments.last)
         : fallbackName;
+    final category = detectDownloadCategory(fileName);
+    final downloadsDir = Directory(
+      '${directory.path}/downloads/${categoryFolderName(category)}',
+    );
+    if (!await downloadsDir.exists()) {
+      await downloadsDir.create(recursive: true);
+    }
     final id = DateTime.now().microsecondsSinceEpoch.toString();
     final item = DownloadItem(
       id: id,
