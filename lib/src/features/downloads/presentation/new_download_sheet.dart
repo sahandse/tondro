@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/widgets/tondro_brand.dart';
+
 class NewDownloadRequest {
   const NewDownloadRequest({
     required this.url,
@@ -69,66 +71,79 @@ class _NewDownloadSheetState extends State<NewDownloadSheet> {
   Widget build(BuildContext context) {
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, 8, 20, keyboard + 20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'دانلود جدید',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
+      padding: EdgeInsets.fromLTRB(14, 8, 14, keyboard + 14),
+      child: XpWindowFrame(
+        title: 'New Download',
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const TondroLogo(size: 44),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'دانلود جدید',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
+                  ),
                 ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _input,
-            autofocus: widget.initialUrl == null,
-            keyboardType: TextInputType.url,
-            textDirection: TextDirection.ltr,
-            decoration: const InputDecoration(
-              hintText: 'https://example.com/file.zip',
-              prefixIcon: Icon(Icons.link_rounded),
+              ],
             ),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: _pickSchedule,
-            icon: const Icon(Icons.schedule_rounded),
-            label: Text(
-              _scheduledAt == null
-                  ? 'زمان‌بندی دانلود'
-                  : 'شروع در ${formatDownloadDateTime(_scheduledAt!)}',
-            ),
-          ),
-          if (_scheduledAt != null)
-            TextButton(
-              onPressed: () => setState(() => _scheduledAt = null),
-              child: const Text('شروع فوری'),
-            ),
-          const SizedBox(height: 8),
-          FilledButton.icon(
-            onPressed: () => Navigator.pop(
-              context,
-              NewDownloadRequest(
-                url: _input.text.trim(),
-                scheduledAt: _scheduledAt,
+            const SizedBox(height: 16),
+            TextField(
+              controller: _input,
+              autofocus: widget.initialUrl == null,
+              keyboardType: TextInputType.url,
+              textDirection: TextDirection.ltr,
+              decoration: const InputDecoration(
+                hintText: 'https://example.com/file.zip',
+                labelText: 'آدرس فایل',
+                prefixIcon: Icon(Icons.link_rounded),
               ),
             ),
-            icon: Icon(
-              _scheduledAt == null
-                  ? Icons.download_rounded
-                  : Icons.schedule_send_rounded,
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _pickSchedule,
+              icon: const Icon(Icons.schedule_rounded),
+              label: Text(
+                _scheduledAt == null
+                    ? 'زمان‌بندی دانلود'
+                    : 'شروع در ' + formatDownloadDateTime(_scheduledAt!),
+              ),
             ),
-            label: Text(
-              _scheduledAt == null ? 'شروع دانلود' : 'ثبت زمان‌بندی',
+            if (_scheduledAt != null)
+              TextButton.icon(
+                onPressed: () => setState(() => _scheduledAt = null),
+                icon: const Icon(Icons.restart_alt_rounded),
+                label: const Text('شروع فوری'),
+              ),
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              onPressed: () => Navigator.pop(
+                context,
+                NewDownloadRequest(
+                  url: _input.text.trim(),
+                  scheduledAt: _scheduledAt,
+                ),
+              ),
+              icon: Icon(
+                _scheduledAt == null
+                    ? Icons.download_rounded
+                    : Icons.schedule_send_rounded,
+              ),
+              label: Text(
+                _scheduledAt == null ? 'شروع دانلود' : 'ثبت زمان‌بندی',
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
-  }
-}
+  }}
 
 String formatDownloadDateTime(DateTime dateTime) {
   final h = dateTime.hour.toString().padLeft(2, '0');
