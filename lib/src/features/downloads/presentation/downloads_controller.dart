@@ -94,17 +94,19 @@ class DownloadsController extends ChangeNotifier {
 
     final directory = await getApplicationDocumentsDirectory();
     final fallbackName = 'download-${DateTime.now().millisecondsSinceEpoch}';
-    final fileName =
+    final rawFileName =
         uri.pathSegments.isNotEmpty && uri.pathSegments.last.isNotEmpty
             ? Uri.decodeComponent(uri.pathSegments.last)
             : fallbackName;
-    final category = detectDownloadCategory(fileName);
+    final safeFileName = _sanitizeFileName(rawFileName, fallbackName);
+    final category = detectDownloadCategory(safeFileName);
     final downloadsDir = Directory(
       '${directory.path}/downloads/${categoryFolderName(category)}',
     );
     if (!await downloadsDir.exists()) {
       await downloadsDir.create(recursive: true);
     }
+    final fileName = await _uniqueFileName(downloadsDir, safeFileName);
 
     final id = DateTime.now().microsecondsSinceEpoch.toString();
     final item = DownloadItem(
@@ -126,6 +128,31 @@ class DownloadsController extends ChangeNotifier {
     }
   }
 
+  String _sanitizeFileName(String value, String fallback) {
+    final sanitized = value
+        .replaceAll(RegExp(r'[\\/:*?"<>|]'), '_')
+        .trim();
+    if (sanitized.isEmpty || sanitized == '.' || sanitized == '..') {
+      return fallback;
+    }
+    return sanitized;
+  }
+
+  Future<String> _uniqueFileName(Directory directory, String original) async {
+    final dot = original.lastIndexOf('.');
+    final hasExtension = dot > 0 && dot < original.length - 1;
+    final base = hasExtension ? original.substring(0, dot) : original;
+    final extension = hasExtension ? original.substring(dot) : '';
+
+    var candidate = original;
+    var counter = 1;
+    while (await File('${directory.path}/$candidate').exists() ||
+        _items.any((item) => item.savePath == '${directory.path}/$candidate')) {
+      candidate = '$base ($counter)$extension';
+      counter++;
+    }
+    return candidate;
+  }
   Future<void> _enqueueReadyItems() async {
     for (final item in _items) {
       if (item.status != DownloadStatus.queued) continue;
