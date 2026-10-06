@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/theme_controller.dart';
+import '../../../app/widgets/tondro_brand.dart';
 import '../../downloads/presentation/downloads_controller.dart';
 
 class DownloadSettingsPage extends StatefulWidget {
@@ -22,7 +23,15 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('تنظیمات دانلود')),
+      appBar: AppBar(
+        title: const Row(
+          children: [
+            TondroLogo(size: 34),
+            SizedBox(width: 10),
+            Text('Control Panel'),
+          ],
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
@@ -40,19 +49,19 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
                   children: [
                     RadioListTile<ThemeMode>(
                       value: ThemeMode.system,
-                      title: Text('همگام با سیستم'),
+                      title: Text('خودکار (سیستم)'),
                       secondary: Icon(Icons.brightness_auto_rounded),
                     ),
                     Divider(height: 1),
                     RadioListTile<ThemeMode>(
                       value: ThemeMode.light,
-                      title: Text('روشن'),
+                      title: Text('سفید'),
                       secondary: Icon(Icons.light_mode_rounded),
                     ),
                     Divider(height: 1),
                     RadioListTile<ThemeMode>(
                       value: ThemeMode.dark,
-                      title: Text('تیره'),
+                      title: Text('مشکی'),
                       secondary: Icon(Icons.dark_mode_rounded),
                     ),
                   ],
@@ -208,25 +217,12 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.only(top: 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            ...children,
-          ],
-        ),
+    return XpWindowFrame(
+      title: title,
+      padding: const EdgeInsets.only(top: 4, bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
       ),
     );
   }
