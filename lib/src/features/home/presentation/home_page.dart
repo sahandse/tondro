@@ -272,9 +272,29 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             separatorBuilder: (_, __) => const SizedBox(height: 12),
                             itemBuilder: (context, index) => _DownloadCard(
                               item: items[index],
-                              onPause: () => _controller.pause(items[index].id),
-                              onResume: () => _controller.start(items[index].id),
-                              onDelete: () => _controller.remove(items[index].id),
+                              onOpen: () async {
+                                HapticFeedback.selectionClick();
+                                final opened = await _controller.openFile(items[index].id);
+                                if (!opened && context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('فایل قابل باز شدن نیست.'),
+                                    ),
+                                  );
+                                }
+                              },
+                              onPause: () {
+                                HapticFeedback.lightImpact();
+                                unawaited(_controller.pause(items[index].id));
+                              },
+                              onResume: () {
+                                HapticFeedback.lightImpact();
+                                unawaited(_controller.start(items[index].id));
+                              },
+                              onDelete: () {
+                                HapticFeedback.mediumImpact();
+                                unawaited(_controller.remove(items[index].id));
+                              },
                             ),
                           ),
               ),
@@ -335,12 +355,14 @@ class _EmptyDownloads extends StatelessWidget {
 class _DownloadCard extends StatelessWidget {
   const _DownloadCard({
     required this.item,
+    required this.onOpen,
     required this.onPause,
     required this.onResume,
     required this.onDelete,
   });
 
   final DownloadItem item;
+  final VoidCallback onOpen;
   final VoidCallback onPause;
   final VoidCallback onResume;
   final VoidCallback onDelete;
