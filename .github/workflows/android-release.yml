@@ -51,21 +51,25 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
-      - name: Validate signing secrets
+      - name: Detect signing secrets
+        id: signing
         shell: bash
         run: |
-          test -n "$ANDROID_KEYSTORE_BASE64" || { echo "::error::Missing ANDROID_KEYSTORE_BASE64"; exit 1; }
-          test -n "$ANDROID_STORE_PASSWORD" || { echo "::error::Missing ANDROID_STORE_PASSWORD"; exit 1; }
-          test -n "$ANDROID_KEY_ALIAS" || { echo "::error::Missing ANDROID_KEY_ALIAS"; exit 1; }
-          test -n "$ANDROID_KEY_PASSWORD" || { echo "::error::Missing ANDROID_KEY_PASSWORD"; exit 1; }
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_STORE_PASSWORD" ] && [ -n "$ANDROID_KEY_ALIAS" ] && [ -n "$ANDROID_KEY_PASSWORD" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Restore signing key
+        if: steps.signing.outputs.available == 'true'
         shell: bash
         run: |
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$ANDROID_KEYSTORE_PATH"
           chmod 600 "$ANDROID_KEYSTORE_PATH"
 
       - name: Configure release signing
+        if: steps.signing.outputs.available == 'true'
         run: python3 tool/configure_release_signing.py
 
       - name: Build release APK
@@ -83,6 +87,11 @@ jobs:
           cp build/app/outputs/flutter-apk/app-release.apk "dist/tondro-${NAME}-release.apk"
           cp build/app/outputs/bundle/release/app-release.aab "dist/tondro-${NAME}-release.aab"
           sha256sum dist/* > dist/SHA256SUMS.txt
+          if [ "${{ steps.signing.outputs.available }}" = "true" ]; then
+            echo "signed" > dist/SIGNING_STATUS.txt
+          else
+            echo "intermediate-debug-signed-release-build" > dist/SIGNING_STATUS.txt
+          fi
 
       - name: Upload market package
         uses: actions/upload-artifact@v4
