@@ -107,11 +107,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   String? _extractUrl(String value) {
     final match =
-        RegExp(r'https?://[^\\s]+', caseSensitive: false).firstMatch(value);
+        RegExp(r'https?://[^\s]+', caseSensitive: false).firstMatch(value);
     if (match == null) return null;
 
-    var url = match.group(0);
-    if (url == null) return null;
+    final matchedUrl = match.group(0);
+    if (matchedUrl == null) return null;
+    var url = matchedUrl;
     const trailing = [')', ']', '}', '>', ',', '،', '؛'];
     while (url.isNotEmpty && trailing.contains(url[url.length - 1])) {
       url = url.substring(0, url.length - 1);
