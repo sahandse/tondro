@@ -14,6 +14,18 @@ gradle = Path("android/app/build.gradle.kts")
 if gradle.exists():
     text = gradle.read_text(encoding="utf-8")
     text = text.replace('applicationId = "ir.tondro.tondro"', 'applicationId = "ir.tondro.app"')
+    text = text.replace(
+        "compileOptions {\n        sourceCompatibility = JavaVersion.VERSION_11\n        targetCompatibility = JavaVersion.VERSION_11\n    }",
+        "compileOptions {\n        isCoreLibraryDesugaringEnabled = true\n        sourceCompatibility = JavaVersion.VERSION_11\n        targetCompatibility = JavaVersion.VERSION_11\n    }",
+    )
+    marker = "dependencies {"
+    if marker in text and "desugar_jdk_libs" not in text:
+        text = text.replace(
+            marker,
+            marker + '\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")'
+        )
+    elif marker not in text and "desugar_jdk_libs" not in text:
+        text += '\n\ndependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")\n}\n'
     gradle.write_text(text, encoding="utf-8")
 
 manifest = Path("android/app/src/main/AndroidManifest.xml")
