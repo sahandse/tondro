@@ -434,11 +434,12 @@ class _EmptyDownloads extends StatelessWidget {
               width: 96,
               height: 96,
               decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(30),
+                color: theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: theme.colorScheme.outline),
               ),
               child: Icon(
-                Icons.download_rounded,
+                Icons.download_for_offline_outlined,
                 size: 48,
                 color: theme.colorScheme.onPrimaryContainer,
               ),
@@ -485,7 +486,8 @@ class _DownloadCard extends StatelessWidget {
     final isRunning = item.status == DownloadStatus.downloading;
     final isDone = item.status == DownloadStatus.completed;
 
-    return Card(
+    return XpWindowFrame(
+      title: _xpStatusLabel(item.status),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -501,7 +503,7 @@ class _DownloadCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(15),
                   ),
                   child: Icon(
-                    isDone ? Icons.check_rounded : Icons.downloading_rounded,
+                    _downloadTypeIcon(item.fileName, isDone: isDone, failed: item.status == DownloadStatus.failed),
                     color: theme.colorScheme.onSecondaryContainer,
                   ),
                 ),
@@ -549,8 +551,8 @@ class _DownloadCard extends StatelessWidget {
             const SizedBox(height: 14),
             LinearProgressIndicator(
               value: item.totalBytes > 0 ? item.progress.clamp(0, 1) : null,
-              borderRadius: BorderRadius.circular(99),
-              minHeight: 7,
+              borderRadius: BorderRadius.circular(2),
+              minHeight: 10,
             ),
             const SizedBox(height: 10),
             Row(
@@ -671,4 +673,31 @@ String _formatTotalSpeed(double bytesPerSecond) {
     return (bytesPerSecond / 1024).toStringAsFixed(0) + ' KB/s';
   }
   return bytesPerSecond.toStringAsFixed(0) + ' B/s';
+}
+
+
+String _xpStatusLabel(DownloadStatus status) => switch (status) {
+      DownloadStatus.queued => 'Queued',
+      DownloadStatus.downloading => 'Downloading...',
+      DownloadStatus.paused => 'Paused',
+      DownloadStatus.completed => 'Completed',
+      DownloadStatus.failed => 'Error',
+    };
+
+IconData _downloadTypeIcon(
+  String fileName, {
+  required bool isDone,
+  required bool failed,
+}) {
+  if (failed) return Icons.warning_amber_rounded;
+  if (isDone) return Icons.check_box_outlined;
+  return switch (detectDownloadCategory(fileName)) {
+    DownloadCategory.image => Icons.image_outlined,
+    DownloadCategory.video => Icons.movie_outlined,
+    DownloadCategory.audio => Icons.headphones_outlined,
+    DownloadCategory.document => Icons.description_outlined,
+    DownloadCategory.archive => Icons.archive_outlined,
+    DownloadCategory.app => Icons.android_outlined,
+    DownloadCategory.other => Icons.insert_drive_file_outlined,
+  };
 }
