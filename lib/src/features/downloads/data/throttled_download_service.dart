@@ -37,14 +37,16 @@ class ThrottledDownloadService {
         );
       }
 
+      final canResume = existingBytes > 0 && response.statusCode == HttpStatus.partialContent;
+      final resumedBytes = canResume ? existingBytes : 0;
       final total = response.contentLength > 0
-          ? existingBytes + response.contentLength
+          ? resumedBytes + response.contentLength
           : 0;
       sink = file.openWrite(
-        mode: existingBytes > 0 ? FileMode.append : FileMode.write,
+        mode: canResume ? FileMode.append : FileMode.write,
       );
 
-      var received = existingBytes;
+      var received = resumedBytes;
       var sessionBytes = 0;
       var lastBytes = received;
       var lastTick = DateTime.now();
