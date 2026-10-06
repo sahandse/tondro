@@ -42,10 +42,16 @@ if manifest.exists():
             first_close = text.find(">")
 
     text = text.replace('android:label="tondro"', 'android:label="تندرو"')
-    text = text.replace(
-        'android:name=".MainActivity"',
-        'android:name=".MainActivity"\n            android:launchMode="singleTask"',
-    )
+    if 'android:launchMode="singleTop"' in text:
+        text = text.replace(
+            'android:launchMode="singleTop"',
+            'android:launchMode="singleTask"',
+        )
+    elif 'android:launchMode=' not in text:
+        text = text.replace(
+            'android:name=".MainActivity"',
+            'android:name=".MainActivity"\n            android:launchMode="singleTask"',
+        )
 
     share_filter = '''\n            <intent-filter>\n                <action android:name="android.intent.action.SEND" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <data android:mimeType="text/*" />\n            </intent-filter>\n'''
     if 'android.intent.action.SEND' not in text:
