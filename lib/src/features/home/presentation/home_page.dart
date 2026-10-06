@@ -184,7 +184,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final items = _visibleItems(_controller.items);
+    final baseItems = _navIndex == 2
+        ? _controller.items.where((e) => e.status == DownloadStatus.completed).toList()
+        : _controller.items;
+    final items = _visibleItems(baseItems);
     final allItems = _controller.items;
     final activeCount = allItems.where((e) => e.status == DownloadStatus.downloading).length;
     final queuedCount = allItems.where((e) => e.status == DownloadStatus.queued).length;
@@ -222,11 +225,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddDownload,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('دانلود جدید'),
-      ),
+      floatingActionButton: _navIndex == 2
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: _showAddDownload,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('دانلود جدید'),
+            ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 104),
@@ -355,6 +360,57 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           ),
               ),
             ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(9),
+            child: NavigationBar(
+              selectedIndex: _navIndex,
+              onDestinationSelected: (index) async {
+                HapticFeedback.selectionClick();
+                if (index == 3) {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => DownloadSettingsPage(controller: _controller),
+                    ),
+                  );
+                  if (mounted) setState(() {});
+                  return;
+                }
+                setState(() {
+                  _navIndex = index;
+                  if (index == 0) _filter = 'all';
+                  if (index == 2) _filter = 'completed';
+                });
+              },
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.window_outlined),
+                  selectedIcon: Icon(Icons.window_rounded),
+                  label: 'خانه',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.download_outlined),
+                  selectedIcon: Icon(Icons.download_rounded),
+                  label: 'دانلودها',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.folder_outlined),
+                  selectedIcon: Icon(Icons.folder_rounded),
+                  label: 'فایل‌ها',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.settings_outlined),
+                  selectedIcon: Icon(Icons.settings),
+                  label: 'تنظیمات',
+                ),
+              ],
+            ),
           ),
         ),
       ),
