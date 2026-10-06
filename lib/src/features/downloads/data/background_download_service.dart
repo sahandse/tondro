@@ -105,6 +105,8 @@ class BackgroundDownloadService {
     return task is DownloadTask ? _downloader.resume(task) : false;
   }
 
+  bool get isWiFi => _downloader.isWiFi;
+
   Future<bool> cancel(String id) => _downloader.cancelTaskWithId(id);
 
   Future<bool> openFile(String filePath) {
