@@ -412,6 +412,7 @@ class DownloadsController extends ChangeNotifier {
 
     _settings = value;
     await _settingsStore.save(value);
+    await _service.configureNotifications(value.notifications);
     await _service.updateRuntimeSettings(
       maxConcurrent: value.maxConcurrentDownloads,
       wifiOnly: value.wifiOnly,
@@ -424,6 +425,17 @@ class DownloadsController extends ChangeNotifier {
     } else {
       await _enqueueReadyItems();
     }
+  }
+
+  Future<bool> openFile(String id) async {
+    final item = _items.cast<DownloadItem?>().firstWhere(
+          (element) => element?.id == id,
+          orElse: () => null,
+        );
+    if (item == null || item.status != DownloadStatus.completed) {
+      return false;
+    }
+    return _service.openFile(item.savePath);
   }
 
   Future<void> schedule(String id, DateTime dateTime) async {
