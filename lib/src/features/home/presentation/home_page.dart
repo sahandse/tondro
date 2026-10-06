@@ -417,10 +417,19 @@ class _DownloadCard extends StatelessWidget {
                 ),
                 PopupMenuButton<String>(
                   onSelected: (value) {
+                    if (value == 'open') onOpen();
                     if (value == 'delete') onDelete();
                   },
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: 'delete', child: Text('حذف')),
+                  itemBuilder: (_) => [
+                    if (isDone)
+                      const PopupMenuItem(
+                        value: 'open',
+                        child: Text('باز کردن'),
+                      ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Text('حذف'),
+                    ),
                   ],
                 ),
               ],
@@ -456,6 +465,10 @@ class _DownloadCard extends StatelessWidget {
   String _subtitle(DownloadItem item) {
     final status = _statusLabel(item.status);
     final category = categoryLabelFa(detectDownloadCategory(item.fileName));
+    if (item.scheduledAt != null &&
+        item.scheduledAt!.isAfter(DateTime.now())) {
+      return 'زمان‌بندی • $category • ${formatDownloadDateTime(item.scheduledAt!)}';
+    }
     if (item.status != DownloadStatus.downloading) return '$status • $category';
 
     final speed = _formatSpeed(item.speedBytesPerSecond);
