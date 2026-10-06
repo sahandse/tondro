@@ -77,4 +77,23 @@ if manifest.exists():
     manifest.write_text(text, encoding="utf-8")
 PY
 
+# Patch receive_sharing_intent 1.8.1 JVM target to match Flutter/JDK 17.
+PLUGIN_GRADLE="$HOME/.pub-cache/hosted/pub.dev/receive_sharing_intent-1.8.1/android/build.gradle"
+if [ -f "$PLUGIN_GRADLE" ]; then
+  python3 - "$PLUGIN_GRADLE" <<'PYPLUGIN'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+text = text.replace("JavaVersion.VERSION_11", "JavaVersion.VERSION_17")
+text = text.replace("JavaVersion.VERSION_1_8", "JavaVersion.VERSION_17")
+text = text.replace("jvmTarget = '11'", "jvmTarget = '17'")
+text = text.replace('jvmTarget = "11"', 'jvmTarget = "17"')
+text = text.replace("jvmTarget = '1.8'", "jvmTarget = '17'")
+text = text.replace('jvmTarget = "1.8"', 'jvmTarget = "17"')
+path.write_text(text, encoding="utf-8")
+PYPLUGIN
+fi
+
 echo "Android platform prepared for Tondro."
