@@ -86,12 +86,27 @@ import sys
 
 path = Path(sys.argv[1])
 text = path.read_text(encoding="utf-8")
+
+if "sourceCompatibility JavaVersion.VERSION_17" not in text:
+    android_marker = "android {"
+    insertion = """android {
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+"""
+    text = text.replace(android_marker, insertion, 1)
+
 text = text.replace("JavaVersion.VERSION_11", "JavaVersion.VERSION_17")
 text = text.replace("JavaVersion.VERSION_1_8", "JavaVersion.VERSION_17")
 text = text.replace("jvmTarget = '11'", "jvmTarget = '17'")
 text = text.replace('jvmTarget = "11"', 'jvmTarget = "17"')
 text = text.replace("jvmTarget = '1.8'", "jvmTarget = '17'")
 text = text.replace('jvmTarget = "1.8"', 'jvmTarget = "17"')
+
 path.write_text(text, encoding="utf-8")
 PYPLUGIN
 fi
