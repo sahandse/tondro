@@ -253,7 +253,7 @@ class _DownloadCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        _statusLabel(item.status),
+                        _subtitle(item),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -299,6 +299,16 @@ class _DownloadCard extends StatelessWidget {
     );
   }
 
+  String _subtitle(DownloadItem item) {
+    final status = _statusLabel(item.status);
+    if (item.status != DownloadStatus.downloading) return status;
+
+    final speed = _formatSpeed(item.speedBytesPerSecond);
+    final eta = _formatEta(item.eta);
+    if (speed == null) return status;
+    return eta == null ? '$status • $speed' : '$status • $speed • $eta مانده';
+  }
+
   String _statusLabel(DownloadStatus status) => switch (status) {
         DownloadStatus.queued => 'در صف',
         DownloadStatus.downloading => 'در حال دانلود',
@@ -306,4 +316,26 @@ class _DownloadCard extends StatelessWidget {
         DownloadStatus.completed => 'تکمیل شده',
         DownloadStatus.failed => 'ناموفق',
       };
+
+  String? _formatSpeed(double bytesPerSecond) {
+    if (bytesPerSecond <= 0) return null;
+    if (bytesPerSecond >= 1024 * 1024) {
+      return '${(bytesPerSecond / (1024 * 1024)).toStringAsFixed(1)} MB/s';
+    }
+    if (bytesPerSecond >= 1024) {
+      return '${(bytesPerSecond / 1024).toStringAsFixed(0)} KB/s';
+    }
+    return '${bytesPerSecond.toStringAsFixed(0)} B/s';
+  }
+
+  String? _formatEta(Duration? duration) {
+    if (duration == null) return null;
+    if (duration.inHours > 0) {
+      return '${duration.inHours}س ${duration.inMinutes.remainder(60)}د';
+    }
+    if (duration.inMinutes > 0) {
+      return '${duration.inMinutes}د ${duration.inSeconds.remainder(60)}ث';
+    }
+    return '${duration.inSeconds}ث';
+  }
 }
