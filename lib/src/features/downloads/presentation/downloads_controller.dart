@@ -68,7 +68,10 @@ class DownloadsController extends ChangeNotifier {
 
     _schedulerTimer = Timer.periodic(
       const Duration(seconds: 20),
-      (_) => _startDueScheduled(),
+      (_) async {
+        await _startDueScheduled();
+        _pumpThrottledQueue();
+      },
     );
 
     _loading = false;
@@ -171,6 +174,7 @@ class DownloadsController extends ChangeNotifier {
 
   void _pumpThrottledQueue() {
     if (_settings.speedLimitKbps <= 0) return;
+    if (_settings.wifiOnly && !_service.isWiFi) return;
     final available =
         _settings.maxConcurrentDownloads - _throttledActive.length;
     if (available <= 0) return;
