@@ -112,7 +112,7 @@ class _NewDownloadSheetState extends State<NewDownloadSheet> {
               label: Text(
                 _scheduledAt == null
                     ? 'زمان‌بندی دانلود'
-                    : 'شروع در ' + formatDownloadDateTime(_scheduledAt!),
+                    : 'شروع در ${formatDownloadDateTime(_scheduledAt!)}',
               ),
             ),
             if (_scheduledAt != null)
