@@ -47,6 +47,13 @@ class BackgroundDownloadService {
     await _downloader.resumeFromBackground();
   }
 
+  Future<void> ensureNotificationPermission() async {
+    final permissionType = PermissionType.notifications;
+    var status = await _downloader.permissions.status(permissionType);
+    if (status == PermissionStatus.granted) return;
+    status = await _downloader.permissions.request(permissionType);
+  }
+
   Future<void> updateRuntimeSettings({
     required int maxConcurrent,
     required bool wifiOnly,
