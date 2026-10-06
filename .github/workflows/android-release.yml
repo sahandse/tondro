@@ -1,0 +1,93 @@
+name: Android Market Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - pubspec.yaml
+
+concurrency:
+  group: android-market-release
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/android/app/upload-keystore.jks
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generate Android platform
+        run: bash tool/bootstrap_android.sh
+
+      - name: Get packages
+        run: flutter pub get
+
+      - name: Test
+        run: flutter test
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Validate signing secrets
+        shell: bash
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64" || { echo "::error::Missing ANDROID_KEYSTORE_BASE64"; exit 1; }
+          test -n "$ANDROID_STORE_PASSWORD" || { echo "::error::Missing ANDROID_STORE_PASSWORD"; exit 1; }
+          test -n "$ANDROID_KEY_ALIAS" || { echo "::error::Missing ANDROID_KEY_ALIAS"; exit 1; }
+          test -n "$ANDROID_KEY_PASSWORD" || { echo "::error::Missing ANDROID_KEY_PASSWORD"; exit 1; }
+
+      - name: Restore signing key
+        shell: bash
+        run: |
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$ANDROID_KEYSTORE_PATH"
+          chmod 600 "$ANDROID_KEYSTORE_PATH"
+
+      - name: Configure release signing
+        run: python3 tool/configure_release_signing.py
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Build release AAB
+        run: flutter build appbundle --release
+
+      - name: Prepare market files
+        shell: bash
+        run: |
+          VERSION="$(awk '/^version:/ {print $2}' pubspec.yaml)"
+          NAME="${VERSION%%+*}"
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/tondro-${NAME}-release.apk"
+          cp build/app/outputs/bundle/release/app-release.aab "dist/tondro-${NAME}-release.aab"
+          sha256sum dist/* > dist/SHA256SUMS.txt
+
+      - name: Upload market package
+        uses: actions/upload-artifact@v4
+        with:
+          name: tondro-market-release
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 30
