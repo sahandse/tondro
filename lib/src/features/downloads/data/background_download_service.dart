@@ -113,7 +113,7 @@ class BackgroundDownloadService {
 
   Future<void> configureNotifications(bool enabled) async {
     if (enabled) {
-      await _downloader.configureNotification(
+      _downloader.configureNotification(
         running: const TaskNotification('تندرو', 'در حال دانلود {filename}'),
         complete: const TaskNotification('دانلود کامل شد', '{filename}'),
         error: const TaskNotification('دانلود ناموفق بود', '{filename}'),
