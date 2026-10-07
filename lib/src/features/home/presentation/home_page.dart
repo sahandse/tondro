@@ -24,6 +24,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   late final DownloadsController _controller;
   StreamSubscription<List<SharedMediaFile>>? _shareSub;
+  StreamSubscription<Uri?>? _widgetClickSub;
   String? _lastClipboardUrl;
   String _filter = 'all';
   String _sort = 'newest';
@@ -34,7 +35,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _controller = DownloadsController()..addListener(_refresh);
+    _widgetClickSub = _controller.widgetClicks.listen(
+      (uri) => unawaited(_controller.handleWidgetAction(uri)),
+    );
     unawaited(_controller.init().then((_) async {
+      final widgetLaunch = await _controller.initialWidgetLaunch();
+      await _controller.handleWidgetAction(widgetLaunch);
       if (!mounted) return;
       await _checkInitialShare();
       await _checkClipboard();
@@ -49,6 +55,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_shareSub?.cancel());
+    unawaited(_widgetClickSub?.cancel());
     _controller
       ..removeListener(_refresh)
       ..dispose();
