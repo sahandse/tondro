@@ -10,6 +10,10 @@ class DownloadItem {
     required this.savePath,
     required this.createdAt,
     this.relativeDirectory,
+    this.mimeType,
+    this.supportsRange = false,
+    this.expectedSha256,
+    this.computedSha256,
     this.status = DownloadStatus.queued,
     this.receivedBytes = 0,
     this.totalBytes = 0,
@@ -25,6 +29,10 @@ class DownloadItem {
   final String savePath;
   final DateTime createdAt;
   final String? relativeDirectory;
+  final String? mimeType;
+  final bool supportsRange;
+  final String? expectedSha256;
+  final String? computedSha256;
   final DownloadStatus status;
   final int receivedBytes;
   final int totalBytes;
@@ -44,6 +52,11 @@ class DownloadItem {
   DownloadItem copyWith({
     DownloadStatus? status,
     String? relativeDirectory,
+    String? mimeType,
+    bool? supportsRange,
+    String? expectedSha256,
+    String? computedSha256,
+    bool clearComputedSha256 = false,
     int? receivedBytes,
     int? totalBytes,
     double? speedBytesPerSecond,
@@ -60,6 +73,12 @@ class DownloadItem {
       savePath: savePath,
       createdAt: createdAt,
       relativeDirectory: relativeDirectory ?? this.relativeDirectory,
+      mimeType: mimeType ?? this.mimeType,
+      supportsRange: supportsRange ?? this.supportsRange,
+      expectedSha256: expectedSha256 ?? this.expectedSha256,
+      computedSha256: clearComputedSha256
+          ? null
+          : computedSha256 ?? this.computedSha256,
       status: status ?? this.status,
       receivedBytes: receivedBytes ?? this.receivedBytes,
       totalBytes: totalBytes ?? this.totalBytes,
@@ -77,6 +96,10 @@ class DownloadItem {
         'savePath': savePath,
         'createdAt': createdAt.toIso8601String(),
         'relativeDirectory': relativeDirectory,
+        'mimeType': mimeType,
+        'supportsRange': supportsRange,
+        'expectedSha256': expectedSha256,
+        'computedSha256': computedSha256,
         'status': status.name,
         'receivedBytes': receivedBytes,
         'totalBytes': totalBytes,
@@ -92,6 +115,10 @@ class DownloadItem {
         savePath: map['savePath'] as String,
         createdAt: DateTime.parse(map['createdAt'] as String),
         relativeDirectory: map['relativeDirectory'] as String?,
+        mimeType: map['mimeType'] as String?,
+        supportsRange: map['supportsRange'] as bool? ?? false,
+        expectedSha256: map['expectedSha256'] as String?,
+        computedSha256: map['computedSha256'] as String?,
         status: DownloadStatus.values.firstWhere(
           (value) => value.name == map['status'],
           orElse: () => DownloadStatus.paused,
