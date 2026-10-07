@@ -74,7 +74,7 @@ class _TorrentPageState extends State<TorrentPage> {
           children: [
             TondroLogo(size: 32),
             SizedBox(width: 10),
-            Text('Torrent / Magnet'),
+            Text('دانلود پیشرفته'),
           ],
         ),
       ),
@@ -82,7 +82,7 @@ class _TorrentPageState extends State<TorrentPage> {
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 32),
         children: [
           XpWindowFrame(
-            title: 'Add Torrent',
+            title: 'افزودن تورنت',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -96,7 +96,7 @@ class _TorrentPageState extends State<TorrentPage> {
                   minLines: 1,
                   maxLines: 3,
                   decoration: const InputDecoration(
-                    labelText: 'Magnet link',
+                    labelText: 'لینک Magnet',
                     hintText: 'magnet:?xt=urn:btih:...',
                   ),
                 ),
@@ -126,7 +126,7 @@ class _TorrentPageState extends State<TorrentPage> {
           const SizedBox(height: 14),
           if (sessions.isEmpty)
             const XpWindowFrame(
-              title: 'Torrent Queue',
+              title: 'صف تورنت',
               child: Padding(
                 padding: EdgeInsets.all(18),
                 child: Text(
@@ -185,7 +185,7 @@ class _TorrentPageState extends State<TorrentPage> {
                                 ? null
                                 : () => _controller.stop(session.id),
                             icon: const Icon(Icons.stop_rounded),
-                            label: const Text('Stop'),
+                            label: const Text('توقف'),
                           ),
                         ],
                       ),
