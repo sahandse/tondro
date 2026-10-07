@@ -9,6 +9,7 @@ import '../../settings/data/settings_store.dart';
 import '../../settings/domain/download_settings.dart';
 import '../data/background_download_service.dart';
 import '../data/download_store.dart';
+import '../data/segmented_download_service.dart';
 import '../data/throttled_download_service.dart';
 import '../domain/download_category.dart';
 import '../domain/download_item.dart';
@@ -19,17 +20,21 @@ class DownloadsController extends ChangeNotifier {
     SettingsStore? settingsStore,
     BackgroundDownloadService? service,
     ThrottledDownloadService? throttledService,
+    SegmentedDownloadService? segmentedService,
   })  : _store = store ?? DownloadStore(),
         _settingsStore = settingsStore ?? SettingsStore(),
         _service = service ?? BackgroundDownloadService(),
-        _throttledService = throttledService ?? ThrottledDownloadService();
+        _throttledService = throttledService ?? ThrottledDownloadService(),
+        _segmentedService = segmentedService ?? SegmentedDownloadService();
 
   final DownloadStore _store;
   final SettingsStore _settingsStore;
   final BackgroundDownloadService _service;
   final ThrottledDownloadService _throttledService;
+  final SegmentedDownloadService _segmentedService;
   final List<DownloadItem> _items = [];
   final Set<String> _throttledActive = {};
+  final Set<String> _segmentedActive = {};
 
   Timer? _schedulerTimer;
   bool _loading = true;
@@ -71,6 +76,7 @@ class DownloadsController extends ChangeNotifier {
       (_) async {
         await _startDueScheduled();
         _pumpThrottledQueue();
+        _pumpSegmentedQueue();
       },
     );
 
@@ -195,11 +201,119 @@ class DownloadsController extends ChangeNotifier {
       _pumpThrottledQueue();
       return;
     }
+    if (_settings.maxSegments > 1) {
+      _pumpSegmentedQueue();
+      return;
+    }
     await _service.enqueue(
       item,
       wifiOnly: _settings.wifiOnly,
       retries: _settings.autoRetry,
     );
+  }
+
+  void _pumpSegmentedQueue() {
+    if (_settings.speedLimitKbps > 0 || _settings.maxSegments <= 1) return;
+    if (_settings.wifiOnly && !_service.isWiFi) return;
+
+    final available =
+        _settings.maxConcurrentDownloads - _segmentedActive.length;
+    if (available <= 0) return;
+
+    final now = DateTime.now();
+    final ready = _items.where((item) {
+      if (item.status != DownloadStatus.queued) return false;
+      if (_segmentedActive.contains(item.id)) return false;
+      return item.scheduledAt == null || !item.scheduledAt!.isAfter(now);
+    }).take(available).toList();
+
+    for (final item in ready) {
+      unawaited(_runSegmented(item.id));
+    }
+  }
+
+  Future<void> _runSegmented(String id) async {
+    final index = _items.indexWhere((item) => item.id == id);
+    if (index < 0 || _segmentedActive.contains(id)) return;
+
+    _segmentedActive.add(id);
+    _items[index] = _items[index].copyWith(
+      status: DownloadStatus.downloading,
+      speedBytesPerSecond: 0,
+      clearError: true,
+      clearSchedule: true,
+    );
+    notifyListeners();
+    await _persist();
+
+    var fallbackToBackground = false;
+    try {
+      final completed = await _segmentedService.download(
+        item: _items[index],
+        segments: _settings.maxSegments,
+        onProgress: (received, total, speed) {
+          final liveIndex = _items.indexWhere((item) => item.id == id);
+          if (liveIndex < 0) return;
+          _items[liveIndex] = _items[liveIndex].copyWith(
+            status: DownloadStatus.downloading,
+            receivedBytes: received,
+            totalBytes: total,
+            speedBytesPerSecond: speed,
+            clearError: true,
+          );
+          notifyListeners();
+        },
+      );
+
+      final doneIndex = _items.indexWhere((item) => item.id == id);
+      if (doneIndex < 0) return;
+
+      if (completed) {
+        _items[doneIndex] = _items[doneIndex].copyWith(
+          status: DownloadStatus.completed,
+          receivedBytes: _items[doneIndex].totalBytes,
+          speedBytesPerSecond: 0,
+        );
+      } else {
+        fallbackToBackground = true;
+        _items[doneIndex] = _items[doneIndex].copyWith(
+          status: DownloadStatus.queued,
+          speedBytesPerSecond: 0,
+        );
+      }
+    } on SegmentedDownloadCanceled {
+      final pausedIndex = _items.indexWhere((item) => item.id == id);
+      if (pausedIndex >= 0) {
+        _items[pausedIndex] = _items[pausedIndex].copyWith(
+          status: DownloadStatus.paused,
+          speedBytesPerSecond: 0,
+        );
+      }
+    } catch (_) {
+      final failedIndex = _items.indexWhere((item) => item.id == id);
+      if (failedIndex >= 0) {
+        _items[failedIndex] = _items[failedIndex].copyWith(
+          status: DownloadStatus.failed,
+          speedBytesPerSecond: 0,
+          errorMessage: 'دانلود چندبخشی انجام نشد. دوباره تلاش کن.',
+        );
+      }
+    } finally {
+      _segmentedActive.remove(id);
+      notifyListeners();
+      await _persist();
+
+      final currentIndex = _items.indexWhere((item) => item.id == id);
+      if (fallbackToBackground && currentIndex >= 0) {
+        await _service.enqueue(
+          _items[currentIndex],
+          wifiOnly: _settings.wifiOnly,
+          retries: _settings.autoRetry,
+        );
+      } else {
+        _pumpSegmentedQueue();
+      }
+    }
   }
 
   void _pumpThrottledQueue() {
@@ -365,6 +479,17 @@ class DownloadsController extends ChangeNotifier {
       return;
     }
 
+    if (_segmentedActive.contains(id)) {
+      _segmentedService.pause(id);
+      _items[index] = item.copyWith(
+        status: DownloadStatus.paused,
+        speedBytesPerSecond: 0,
+      );
+      notifyListeners();
+      await _persist();
+      return;
+    }
+
     if (_throttledActive.contains(id)) {
       _throttledService.pause(id);
       _items[index] = item.copyWith(
@@ -395,6 +520,10 @@ class DownloadsController extends ChangeNotifier {
       _pumpThrottledQueue();
       return;
     }
+    if (_settings.maxSegments > 1) {
+      _pumpSegmentedQueue();
+      return;
+    }
 
     final resumed = await _service.resume(id);
     if (!resumed) {
@@ -408,7 +537,10 @@ class DownloadsController extends ChangeNotifier {
     final index = _items.indexWhere((e) => e.id == id);
     if (index < 0) return;
 
-    if (_throttledActive.contains(id)) {
+    if (_segmentedActive.contains(id)) {
+      _segmentedService.pause(id);
+      _segmentedActive.remove(id);
+    } else if (_throttledActive.contains(id)) {
       _throttledService.pause(id);
       _throttledActive.remove(id);
     } else {
@@ -419,6 +551,7 @@ class DownloadsController extends ChangeNotifier {
     if (await file.exists()) {
       await file.delete();
     }
+    await _deleteSegmentParts(item.savePath);
 
     notifyListeners();
     await _persist();
@@ -426,7 +559,11 @@ class DownloadsController extends ChangeNotifier {
 
   Future<void> updateSettings(DownloadSettings value) async {
     final speedChanged = _settings.speedLimitKbps != value.speedLimitKbps;
-    if (speedChanged) {
+    final segmentsChanged = _settings.maxSegments != value.maxSegments;
+    if (speedChanged || segmentsChanged) {
+      for (final id in _segmentedActive.toList()) {
+        _segmentedService.pause(id);
+      }
       for (final id in _throttledActive.toList()) {
         _throttledService.pause(id);
       }
@@ -442,6 +579,7 @@ class DownloadsController extends ChangeNotifier {
         }
       }
       _throttledActive.clear();
+      _segmentedActive.clear();
     }
 
     _settings = value;
@@ -456,6 +594,8 @@ class DownloadsController extends ChangeNotifier {
 
     if (value.speedLimitKbps > 0) {
       _pumpThrottledQueue();
+    } else if (value.maxSegments > 1) {
+      _pumpSegmentedQueue();
     } else {
       await _enqueueReadyItems();
     }
@@ -487,11 +627,23 @@ class DownloadsController extends ChangeNotifier {
     await _startDueScheduled();
   }
 
+  Future<void> _deleteSegmentParts(String savePath) async {
+    for (var index = 0; index < 16; index++) {
+      final part = File('$savePath.part.$index');
+      if (await part.exists()) {
+        await part.delete();
+      }
+    }
+  }
+
   Future<void> _persist() => _store.save(_items);
 
   @override
   void dispose() {
     _schedulerTimer?.cancel();
+    for (final id in _segmentedActive.toList()) {
+      _segmentedService.pause(id);
+    }
     for (final id in _throttledActive.toList()) {
       _throttledService.pause(id);
     }
