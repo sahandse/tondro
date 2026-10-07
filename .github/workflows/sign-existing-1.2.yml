@@ -1,0 +1,107 @@
+name: Sign Existing Tondro 1.2 Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/sign-existing-1.2.yml
+  workflow_dispatch:
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Download built 1.2.0 market artifact
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          repository: sahandse/tondro
+          run-id: 37615949060
+          name: tondro-market-release
+          path: input
+
+      - name: Create release signing material
+        shell: bash
+        run: |
+          STORE_PASSWORD="$(openssl rand -hex 20)"
+          KEY_ALIAS="tondro"
+          KEYSTORE_PATH="$GITHUB_WORKSPACE/tondro-release.jks"
+          echo "::add-mask::$STORE_PASSWORD"
+          echo "ANDROID_STORE_PASSWORD=$STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "ANDROID_KEY_PASSWORD=$STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "ANDROID_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "ANDROID_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+          keytool -genkeypair -v -keystore "$KEYSTORE_PATH" -storepass "$STORE_PASSWORD" -keypass "$STORE_PASSWORD" -alias "$KEY_ALIAS" -keyalg RSA -keysize 4096 -validity 10000 -dname "CN=Tondro, OU=Mobile, O=Tondro, L=Tehran, ST=Tehran, C=IR"
+          mkdir -p signing-private
+          cp "$KEYSTORE_PATH" signing-private/tondro-release-key.jks
+          printf 'ANDROID_KEY_ALIAS=%s\nANDROID_STORE_PASSWORD=%s\nANDROID_KEY_PASSWORD=%s\n' "$KEY_ALIAS" "$STORE_PASSWORD" "$STORE_PASSWORD" > signing-private/credentials.txt
+          tar -czf signing-backup.tar.gz signing-private
+          BACKUP_KEY="$(openssl rand -hex 32)"
+          echo "::add-mask::$BACKUP_KEY"
+          openssl enc -aes-256-cbc -pbkdf2 -salt -pass pass:"$BACKUP_KEY" -in signing-backup.tar.gz -out signing-backup.enc
+          printf '%s' "$BACKUP_KEY" | openssl pkeyutl -encrypt -pubin -inkey tool/release-backup-public.pem -out signing-backup-key.enc
+
+      - name: Re-sign APK with Android v1 v2 v3
+        shell: bash
+        run: |
+          set -e
+          mkdir -p work dist
+          APK="$(find input -type f -name '*.apk' | head -1)"
+          test -n "$APK"
+          cp "$APK" work/input.apk
+          zip -q -d work/input.apk 'META-INF/*.RSA' 'META-INF/*.DSA' 'META-INF/*.EC' 'META-INF/*.SF' || true
+          ZIPALIGN="$(find "$ANDROID_SDK_ROOT/build-tools" -type f -name zipalign | sort -V | tail -1)"
+          APKSIGNER="$(find "$ANDROID_SDK_ROOT/build-tools" -type f -name apksigner | sort -V | tail -1)"
+          test -n "$ZIPALIGN"
+          test -n "$APKSIGNER"
+          "$ZIPALIGN" -f -p 4 work/input.apk work/aligned.apk
+          "$APKSIGNER" sign --ks "$ANDROID_KEYSTORE_PATH" --ks-key-alias "$ANDROID_KEY_ALIAS" --ks-pass env:ANDROID_STORE_PASSWORD --key-pass env:ANDROID_KEY_PASSWORD --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --out dist/Tondro-1.2.0-release.apk work/aligned.apk
+          "$APKSIGNER" verify --verbose --print-certs dist/Tondro-1.2.0-release.apk
+
+      - name: Re-sign AAB
+        shell: bash
+        run: |
+          set -e
+          AAB="$(find input -type f -name '*.aab' | head -1)"
+          test -n "$AAB"
+          cp "$AAB" dist/Tondro-1.2.0-release.aab
+          zip -q -d dist/Tondro-1.2.0-release.aab 'META-INF/*.RSA' 'META-INF/*.DSA' 'META-INF/*.EC' 'META-INF/*.SF' || true
+          jarsigner -keystore "$ANDROID_KEYSTORE_PATH" -storepass "$ANDROID_STORE_PASSWORD" -keypass "$ANDROID_KEY_PASSWORD" -sigalg SHA256withRSA -digestalg SHA-256 dist/Tondro-1.2.0-release.aab "$ANDROID_KEY_ALIAS"
+          set +e
+          jarsigner -verify -verbose -certs dist/Tondro-1.2.0-release.aab > aab-verify.log 2>&1
+          cat aab-verify.log
+          grep -q "jar verified." aab-verify.log
+
+      - name: Checksums
+        shell: bash
+        run: |
+          sha256sum dist/Tondro-1.2.0-release.apk dist/Tondro-1.2.0-release.aab > dist/Tondro-1.2.0-SHA256SUMS.txt
+
+      - name: Upload release
+        uses: actions/upload-artifact@v4
+        with:
+          name: tondro-1.2.0-final-release
+          path: dist/*
+          if-no-files-found: error
+
+      - name: Upload encrypted signing backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: tondro-1.2.0-final-signing-backup
+          path: |
+            signing-backup.enc
+            signing-backup-key.enc
+          if-no-files-found: error
