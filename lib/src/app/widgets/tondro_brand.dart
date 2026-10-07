@@ -116,7 +116,7 @@ class XpWindowFrame extends StatelessWidget {
     required this.title,
     required this.child,
     this.trailing,
-    this.padding = const EdgeInsets.all(14),
+    this.padding = const EdgeInsets.all(16),
   });
 
   final String title;
@@ -128,73 +128,53 @@ class XpWindowFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dark = theme.brightness == Brightness.dark;
-    final border = theme.colorScheme.outline;
-    final surface = theme.colorScheme.surface;
 
     return Container(
       decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: border, width: 1.2),
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: .55),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: dark ? .45 : .14),
-            offset: const Offset(3, 3),
-            blurRadius: 0,
+            color: Colors.black.withValues(alpha: dark ? .18 : .06),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            height: 34,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.onSurface,
-              border: Border(bottom: BorderSide(color: border)),
-            ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 15, 16, 0),
             child: Row(
               children: [
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.secondary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     title,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.surface,
+                    style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                 ),
                 if (trailing != null) trailing!,
-                const SizedBox(width: 5),
-                _WindowDot(color: theme.colorScheme.surface),
-                const SizedBox(width: 4),
-                _WindowDot(color: theme.colorScheme.surface),
-                const SizedBox(width: 4),
-                _WindowDot(color: theme.colorScheme.surface),
               ],
             ),
           ),
           Padding(padding: padding, child: child),
         ],
-      ),
-    );
-  }
-}
-
-class _WindowDot extends StatelessWidget {
-  const _WindowDot({required this.color});
-
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 8,
-      height: 8,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(2),
       ),
     );
   }
