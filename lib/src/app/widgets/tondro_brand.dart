@@ -27,92 +27,61 @@ class _TondroRibbonPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
-    const cyan = Color(0xFF56E9FF);
+    const cyan = Color(0xFF54E6FF);
     const blue = Color(0xFF1785FF);
-    const royal = Color(0xFF1746E8);
-    const deep = Color(0xFF092CA5);
+    const royal = Color(0xFF2356F6);
 
-    final top = Path()
-      ..moveTo(size.width * .50, size.height * .08)
-      ..cubicTo(
-        size.width * .28,
-        size.height * .20,
-        size.width * .26,
-        size.height * .35,
-        size.width * .44,
-        size.height * .45,
-      )
-      ..cubicTo(
-        size.width * .61,
-        size.height * .55,
-        size.width * .73,
-        size.height * .51,
-        size.width * .76,
-        size.height * .41,
-      )
-      ..cubicTo(
-        size.width * .79,
-        size.height * .31,
-        size.width * .70,
-        size.height * .25,
-        size.width * .50,
-        size.height * .08,
-      )
-      ..close();
-
-    final middle = Path()
-      ..moveTo(size.width * .34, size.height * .36)
-      ..cubicTo(
-        size.width * .41,
-        size.height * .48,
-        size.width * .66,
-        size.height * .50,
-        size.width * .70,
-        size.height * .62,
-      )
-      ..cubicTo(
-        size.width * .73,
-        size.height * .71,
-        size.width * .64,
-        size.height * .77,
-        size.width * .52,
-        size.height * .79,
-      )
-      ..cubicTo(
-        size.width * .64,
-        size.height * .68,
-        size.width * .55,
-        size.height * .61,
-        size.width * .39,
-        size.height * .55,
-      )
-      ..cubicTo(
-        size.width * .25,
-        size.height * .50,
-        size.width * .24,
+    final stem = RRect.fromRectAndRadius(
+      Rect.fromLTWH(
+        size.width * .43,
+        size.height * .14,
+        size.width * .14,
         size.height * .43,
-        size.width * .34,
-        size.height * .36,
-      )
-      ..close();
+      ),
+      Radius.circular(size.width * .07),
+    );
+
+    canvas.drawRRect(
+      stem,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [cyan, blue],
+        ).createShader(rect),
+    );
 
     final arrow = Path()
-      ..moveTo(size.width * .22, size.height * .64)
-      ..lineTo(size.width * .45, size.height * .68)
-      ..lineTo(size.width * .45, size.height * .57)
-      ..lineTo(size.width * .52, size.height * .79)
-      ..lineTo(size.width * .84, size.height * .65)
-      ..lineTo(size.width * .72, size.height * .88)
+      ..moveTo(size.width * .22, size.height * .49)
       ..quadraticBezierTo(
-        size.width * .52,
-        size.height * 1.02,
-        size.width * .31,
-        size.height * .86,
+        size.width * .20,
+        size.height * .46,
+        size.width * .25,
+        size.height * .46,
+      )
+      ..lineTo(size.width * .43, size.height * .46)
+      ..lineTo(size.width * .43, size.height * .56)
+      ..lineTo(size.width * .50, size.height * .63)
+      ..lineTo(size.width * .57, size.height * .56)
+      ..lineTo(size.width * .57, size.height * .46)
+      ..lineTo(size.width * .75, size.height * .46)
+      ..quadraticBezierTo(
+        size.width * .80,
+        size.height * .46,
+        size.width * .78,
+        size.height * .49,
+      )
+      ..lineTo(size.width * .54, size.height * .76)
+      ..quadraticBezierTo(
+        size.width * .50,
+        size.height * .81,
+        size.width * .46,
+        size.height * .76,
       )
       ..close();
 
     canvas.drawPath(
-      top,
+      arrow,
       Paint()
         ..shader = const LinearGradient(
           begin: Alignment.topLeft,
@@ -121,36 +90,20 @@ class _TondroRibbonPainter extends CustomPainter {
         ).createShader(rect),
     );
 
-    canvas.drawPath(
-      middle,
-      Paint()
-        ..shader = const LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [cyan, royal, deep],
-        ).createShader(rect),
-    );
-
-    canvas.drawPath(
-      arrow,
-      Paint()
-        ..shader = const LinearGradient(
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-          colors: [cyan, blue, royal],
-        ).createShader(rect),
-    );
-
-    final edgePaint = Paint()
-      ..color = Colors.white.withValues(alpha: .48)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = size.width * .018
-      ..strokeJoin = StrokeJoin.round
+    final trayPaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: [blue, royal],
+      ).createShader(rect)
+      ..strokeWidth = size.width * .105
       ..strokeCap = StrokeCap.round;
-    canvas
-      ..drawPath(top, edgePaint)
-      ..drawPath(middle, edgePaint)
-      ..drawPath(arrow, edgePaint);
+
+    canvas.drawLine(
+      Offset(size.width * .31, size.height * .87),
+      Offset(size.width * .69, size.height * .87),
+      trayPaint,
+    );
   }
 
   @override
