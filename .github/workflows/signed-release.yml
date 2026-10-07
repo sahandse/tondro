@@ -52,7 +52,7 @@ jobs:
         shell: bash
         run: |
           STORE_PASSWORD="$(openssl rand -hex 20)"
-          KEY_PASSWORD="$(openssl rand -hex 20)"
+          KEY_PASSWORD="$STORE_PASSWORD"
           KEY_ALIAS="tondro"
           KEYSTORE_PATH="$GITHUB_WORKSPACE/android/app/tondro-release.jks"
 
