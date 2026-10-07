@@ -1,0 +1,113 @@
+name: Tondro 1.2 Signed Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/release-v2.yml
+      - pubspec.yaml
+  workflow_dispatch:
+
+concurrency:
+  group: tondro-release-v2
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generate Android
+        run: bash tool/bootstrap_android.sh
+
+      - name: Get packages
+        run: flutter pub get
+
+      - name: Test
+        run: flutter test
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Create release signing material
+        shell: bash
+        run: |
+          STORE_PASSWORD="$(openssl rand -hex 20)"
+          KEY_ALIAS="tondro"
+          KEYSTORE_PATH="$GITHUB_WORKSPACE/android/app/tondro-release.jks"
+          echo "::add-mask::$STORE_PASSWORD"
+          echo "ANDROID_STORE_PASSWORD=$STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "ANDROID_KEY_PASSWORD=$STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "ANDROID_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "ANDROID_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+          keytool -genkeypair -v -keystore "$KEYSTORE_PATH" -storepass "$STORE_PASSWORD" -keypass "$STORE_PASSWORD" -alias "$KEY_ALIAS" -keyalg RSA -keysize 4096 -validity 10000 -dname "CN=Tondro, OU=Mobile, O=Tondro, L=Tehran, ST=Tehran, C=IR"
+          mkdir -p signing-private
+          cp "$KEYSTORE_PATH" signing-private/tondro-release-key.jks
+          printf 'ANDROID_KEY_ALIAS=%s\nANDROID_STORE_PASSWORD=%s\nANDROID_KEY_PASSWORD=%s\n' "$KEY_ALIAS" "$STORE_PASSWORD" "$STORE_PASSWORD" > signing-private/credentials.txt
+          tar -czf signing-backup.tar.gz signing-private
+          BACKUP_KEY="$(openssl rand -hex 32)"
+          echo "::add-mask::$BACKUP_KEY"
+          openssl enc -aes-256-cbc -pbkdf2 -salt -pass pass:"$BACKUP_KEY" -in signing-backup.tar.gz -out signing-backup.enc
+          printf '%s' "$BACKUP_KEY" | openssl pkeyutl -encrypt -pubin -inkey tool/release-backup-public.pem -out signing-backup-key.enc
+
+      - name: Configure signing
+        run: python3 tool/configure_release_signing.py
+
+      - name: Build signed APK
+        run: flutter build apk --release
+
+      - name: Build signed AAB
+        run: flutter build appbundle --release
+
+      - name: Verify APK
+        shell: bash
+        run: |
+          APKSIGNER="$(find "$ANDROID_SDK_ROOT/build-tools" -type f -name apksigner | sort -V | tail -1)"
+          test -n "$APKSIGNER"
+          "$APKSIGNER" verify --verbose --print-certs build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Verify AAB
+        run: jarsigner -verify -strict -certs build/app/outputs/bundle/release/app-release.aab
+
+      - name: Prepare release files
+        shell: bash
+        run: |
+          VERSION="$(awk '/^version:/ {print $2}' pubspec.yaml)"
+          NAME="${VERSION%%+*}"
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/Tondro-${NAME}-release.apk"
+          cp build/app/outputs/bundle/release/app-release.aab "dist/Tondro-${NAME}-release.aab"
+          sha256sum dist/* > "dist/Tondro-${NAME}-SHA256SUMS.txt"
+
+      - name: Upload release
+        uses: actions/upload-artifact@v4
+        with:
+          name: tondro-1.2.0-release
+          path: dist/*
+          if-no-files-found: error
+
+      - name: Upload encrypted signing backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: tondro-1.2.0-signing-backup
+          path: |
+            signing-backup.enc
+            signing-backup-key.enc
+          if-no-files-found: error
