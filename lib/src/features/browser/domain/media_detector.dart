@@ -13,8 +13,24 @@ class MediaDetector {
 
     final last = uri.pathSegments.last.toLowerCase();
     final dot = last.lastIndexOf('.');
-    if (dot < 0 || dot == last.length - 1) return false;
-    return _extensions.contains(last.substring(dot + 1));
+    if (dot >= 0 && dot < last.length - 1) {
+      if (_extensions.contains(last.substring(dot + 1))) return true;
+    }
+
+    final format = uri.queryParameters['format']?.toLowerCase();
+    return format != null && _extensions.contains(format);
+  }
+
+  static bool isSupportedSocialPage(String value) {
+    final uri = Uri.tryParse(value);
+    if (uri == null || !{'http', 'https'}.contains(uri.scheme)) return false;
+    final host = uri.host.toLowerCase();
+    return host == 'x.com' ||
+        host.endsWith('.x.com') ||
+        host == 'twitter.com' ||
+        host.endsWith('.twitter.com') ||
+        host == 'reddit.com' ||
+        host.endsWith('.reddit.com');
   }
 
   static List<String> extractDirectUrls(Iterable<String> values) {
