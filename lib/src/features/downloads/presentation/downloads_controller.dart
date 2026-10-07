@@ -5,6 +5,7 @@ import 'package:background_downloader/background_downloader.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../settings/data/settings_store.dart';
 import '../../site_profiles/data/site_profile_store.dart';
@@ -89,6 +90,10 @@ class DownloadsController extends ChangeNotifier {
     await _service.updateRuntimeSettings(
       maxConcurrent: _settings.maxConcurrentDownloads,
       wifiOnly: _settings.wifiOnly,
+    );
+    await _service.configureNotifications(
+      _settings.notifications,
+      showComplete: _settings.completionAction != CompletionAction.none,
     );
 
     _schedulerTimer = Timer.periodic(
@@ -302,6 +307,9 @@ class DownloadsController extends ChangeNotifier {
         clearError: !mismatch,
         speedBytesPerSecond: 0,
       );
+      if (!mismatch && _settings.completionAction == CompletionAction.open) {
+        unawaited(_service.openFile(file.path));
+      }
       notifyListeners();
       _scheduleWidgetUpdate();
       await _persist();
@@ -781,6 +789,57 @@ class DownloadsController extends ChangeNotifier {
     await _persist();
   }
 
+  Future<void> applyNetworkProfile(NetworkProfilePreset profile) async {
+    final next = switch (profile) {
+      NetworkProfilePreset.balanced => _settings.copyWith(
+          networkProfile: profile,
+          wifiOnly: false,
+          maxConcurrentDownloads: 3,
+          maxSegments: 4,
+          smartSegments: true,
+          speedLimitKbps: 0,
+        ),
+      NetworkProfilePreset.wifiFast => _settings.copyWith(
+          networkProfile: profile,
+          wifiOnly: true,
+          maxConcurrentDownloads: 5,
+          maxSegments: 16,
+          smartSegments: true,
+          speedLimitKbps: 0,
+        ),
+      NetworkProfilePreset.dataSaver => _settings.copyWith(
+          networkProfile: profile,
+          wifiOnly: false,
+          maxConcurrentDownloads: 1,
+          maxSegments: 1,
+          smartSegments: false,
+          speedLimitKbps: 1024,
+        ),
+      NetworkProfilePreset.custom => _settings.copyWith(
+          networkProfile: profile,
+        ),
+    };
+    await updateSettings(next);
+  }
+
+  Future<bool> shareFile(String id) async {
+    final index = _items.indexWhere((item) => item.id == id);
+    if (index < 0) return false;
+    final item = _items[index];
+    if (item.status != DownloadStatus.completed) return false;
+
+    final file = File(item.savePath);
+    if (!await file.exists()) return false;
+
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path)],
+        text: item.fileName,
+      ),
+    );
+    return true;
+  }
+
   Future<void> updateSettings(DownloadSettings value) async {
     final speedChanged = _settings.speedLimitKbps != value.speedLimitKbps;
     final segmentsChanged = _settings.maxSegments != value.maxSegments;
@@ -808,7 +867,10 @@ class DownloadsController extends ChangeNotifier {
 
     _settings = value;
     await _settingsStore.save(value);
-    await _service.configureNotifications(value.notifications);
+    await _service.configureNotifications(
+      value.notifications,
+      showComplete: value.completionAction != CompletionAction.none,
+    );
     await _service.updateRuntimeSettings(
       maxConcurrent: value.maxConcurrentDownloads,
       wifiOnly: value.wifiOnly,
@@ -881,7 +943,10 @@ class DownloadsController extends ChangeNotifier {
         }),
       );
 
-    await _service.configureNotifications(_settings.notifications);
+    await _service.configureNotifications(
+      _settings.notifications,
+      showComplete: _settings.completionAction != CompletionAction.none,
+    );
     await _service.updateRuntimeSettings(
       maxConcurrent: _settings.maxConcurrentDownloads,
       wifiOnly: _settings.wifiOnly,
