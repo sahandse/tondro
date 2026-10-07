@@ -134,7 +134,7 @@ class _NewDownloadSheetState extends State<NewDownloadSheet> {
       padding: EdgeInsets.fromLTRB(14, 8, 14, keyboard + 14),
       child: SingleChildScrollView(
         child: XpWindowFrame(
-          title: 'New Download',
+          title: 'دانلود جدید',
           padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -170,7 +170,7 @@ class _NewDownloadSheetState extends State<NewDownloadSheet> {
                 },
                 decoration: const InputDecoration(
                   hintText: 'https://example.com/file.zip',
-                  labelText: 'آدرس فایل',
+                  labelText: 'لینک دانلود',
                   prefixIcon: Icon(Icons.link_rounded),
                 ),
               ),
@@ -245,7 +245,7 @@ class _NewDownloadSheetState extends State<NewDownloadSheet> {
               TextField(
                 controller: _folder,
                 decoration: const InputDecoration(
-                  labelText: 'پوشه اختصاصی (اختیاری)',
+                  labelText: 'پوشه ذخیره (اختیاری)',
                   hintText: 'مثلاً Movies',
                   prefixIcon: Icon(Icons.folder_outlined),
                 ),
@@ -273,7 +273,7 @@ class _NewDownloadSheetState extends State<NewDownloadSheet> {
                 controller: _sha256,
                 textDirection: TextDirection.ltr,
                 decoration: const InputDecoration(
-                  labelText: 'SHA-256 مورد انتظار (اختیاری)',
+                  labelText: 'SHA-256 (اختیاری)',
                   hintText: '64 hex characters',
                   prefixIcon: Icon(Icons.verified_user_outlined),
                 ),
