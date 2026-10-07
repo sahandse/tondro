@@ -1,3 +1,29 @@
+enum NetworkProfilePreset {
+  balanced,
+  wifiFast,
+  dataSaver,
+  custom,
+}
+
+String networkProfileLabelFa(NetworkProfilePreset value) => switch (value) {
+      NetworkProfilePreset.balanced => 'متعادل',
+      NetworkProfilePreset.wifiFast => 'Wi-Fi سریع',
+      NetworkProfilePreset.dataSaver => 'صرفه‌جویی دیتا',
+      NetworkProfilePreset.custom => 'سفارشی',
+    };
+
+enum CompletionAction {
+  notify,
+  open,
+  none,
+}
+
+String completionActionLabelFa(CompletionAction value) => switch (value) {
+      CompletionAction.notify => 'فقط اعلان',
+      CompletionAction.open => 'بازکردن فایل',
+      CompletionAction.none => 'هیچ‌کاری',
+    };
+
 class DownloadSettings {
   const DownloadSettings({
     this.maxConcurrentDownloads = 3,
@@ -8,6 +34,8 @@ class DownloadSettings {
     this.speedLimitKbps = 0,
     this.maxSegments = 4,
     this.smartSegments = true,
+    this.networkProfile = NetworkProfilePreset.balanced,
+    this.completionAction = CompletionAction.notify,
   });
 
   final int maxConcurrentDownloads;
@@ -18,6 +46,8 @@ class DownloadSettings {
   final int speedLimitKbps;
   final int maxSegments;
   final bool smartSegments;
+  final NetworkProfilePreset networkProfile;
+  final CompletionAction completionAction;
 
   DownloadSettings copyWith({
     int? maxConcurrentDownloads,
@@ -28,6 +58,8 @@ class DownloadSettings {
     int? speedLimitKbps,
     int? maxSegments,
     bool? smartSegments,
+    NetworkProfilePreset? networkProfile,
+    CompletionAction? completionAction,
   }) {
     return DownloadSettings(
       maxConcurrentDownloads:
@@ -39,6 +71,8 @@ class DownloadSettings {
       speedLimitKbps: speedLimitKbps ?? this.speedLimitKbps,
       maxSegments: maxSegments ?? this.maxSegments,
       smartSegments: smartSegments ?? this.smartSegments,
+      networkProfile: networkProfile ?? this.networkProfile,
+      completionAction: completionAction ?? this.completionAction,
     );
   }
 }
