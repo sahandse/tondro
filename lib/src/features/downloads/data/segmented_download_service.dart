@@ -81,7 +81,7 @@ class SegmentedDownloadService {
           IOSink? sink;
           try {
             final request = await client.getUrl(Uri.parse(item.url));
-            headers.forEach(request.headers.set);
+            headers.forEach((name, value) => request.headers.set(name, value));
             request.headers.set(
               HttpHeaders.rangeHeader,
               'bytes=${range.start + existing}-${range.end}',
@@ -172,7 +172,7 @@ class SegmentedDownloadService {
     final client = HttpClient();
     try {
       final request = await client.getUrl(Uri.parse(url));
-      headers.forEach(request.headers.set);
+      headers.forEach((name, value) => request.headers.set(name, value));
       request.headers.set(HttpHeaders.rangeHeader, 'bytes=0-0');
       final response = await request.close();
       await response.drain<void>();
