@@ -107,6 +107,29 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
                   },
                 ),
               ),
+              const Divider(height: 1),              ListTile(
+                title: const Text('اتصال‌های هر فایل'),
+                subtitle: Text('${settings.maxSegments} بخش موازی'),
+                trailing: DropdownButton<int>(
+                  value: settings.maxSegments,
+                  underline: const SizedBox.shrink(),
+                  items: const [1, 2, 4, 8, 16]
+                      .map(
+                        (value) => DropdownMenuItem(
+                          value: value,
+                          child: Text('$value'),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) async {
+                    if (value == null) return;
+                    await widget.controller.updateSettings(
+                      settings.copyWith(maxSegments: value),
+                    );
+                    if (mounted) setState(() {});
+                  },
+                ),
+              ),
               const Divider(height: 1),
               ListTile(
                 title: const Text('تلاش خودکار'),
