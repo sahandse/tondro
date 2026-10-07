@@ -151,6 +151,8 @@ class AppBackupService {
         'speedLimitKbps': value.speedLimitKbps,
         'maxSegments': value.maxSegments,
         'smartSegments': value.smartSegments,
+        'networkProfile': value.networkProfile.name,
+        'completionAction': value.completionAction.name,
       };
 
   DownloadSettings _settingsFromMap(Map<String, dynamic> map) =>
@@ -164,5 +166,13 @@ class AppBackupService {
         speedLimitKbps: (map['speedLimitKbps'] as num?)?.toInt() ?? 0,
         maxSegments: (map['maxSegments'] as num?)?.toInt() ?? 4,
         smartSegments: map['smartSegments'] as bool? ?? true,
+        networkProfile: NetworkProfilePreset.values.firstWhere(
+          (value) => value.name == map['networkProfile'],
+          orElse: () => NetworkProfilePreset.balanced,
+        ),
+        completionAction: CompletionAction.values.firstWhere(
+          (value) => value.name == map['completionAction'],
+          orElse: () => CompletionAction.notify,
+        ),
       );
 }
