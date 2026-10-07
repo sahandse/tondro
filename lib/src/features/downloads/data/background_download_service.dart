@@ -69,17 +69,21 @@ class BackgroundDownloadService {
     DownloadItem item, {
     required bool wifiOnly,
     required int retries,
+    Map<String, String> headers = const {},
   }) {
     final category = detectDownloadCategory(item.fileName);
+    final directory = item.relativeDirectory ??
+        'downloads/${categoryFolderName(category)}';
     return DownloadTask(
       taskId: item.id,
       url: item.url,
       filename: item.fileName,
-      directory: 'downloads/${categoryFolderName(category)}',
+      directory: directory,
       baseDirectory: BaseDirectory.applicationDocuments,
       updates: Updates.statusAndProgress,
       requiresWiFi: wifiOnly,
       retries: retries.clamp(0, 5),
+      headers: headers,
       allowPause: true,
       transferHints: const {
         TransferHint.userInitiated,
@@ -92,11 +96,13 @@ class BackgroundDownloadService {
     DownloadItem item, {
     required bool wifiOnly,
     required int retries,
+    Map<String, String> headers = const {},
   }) async {
     final task = taskForItem(
       item,
       wifiOnly: wifiOnly,
       retries: retries,
+      headers: headers,
     );
     queue.add(task);
     return true;
