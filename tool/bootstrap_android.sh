@@ -97,16 +97,22 @@ icon.write_text("""<vector xmlns:android="http://schemas.android.com/apk/res/and
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:fillColor="#000000" android:pathData="M0,0h108v108h-108z"/>
+    <path android:fillColor="#08152E" android:pathData="M0,0h108v108h-108z"/>
     <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M49,18h10v43h13L54,81L36,61h13z"/>
+        android:fillColor="#54E6FF"
+        android:pathData="M54,9C35,20 31,35 44,45C57,55 72,53 78,42C82,34 73,27 54,9Z"/>
     <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M28,86h52v7h-52z"/>
+        android:fillColor="#177FFF"
+        android:pathData="M35,38C42,50 67,51 72,63C76,72 66,80 55,81C64,70 55,62 40,56C27,51 26,44 35,38Z"/>
     <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M68,18L57,39h10L57,56l23,-28h-11l9,-10z"/>
+        android:fillColor="#1553E8"
+        android:pathData="M23,65L46,69L46,59L54,81L85,66L73,89C60,101 45,100 32,88Z"/>
+    <path
+        android:fillColor="#79F2FF"
+        android:pathData="M54,9C46,15 40,20 36,26C43,19 50,16 58,14Z"/>
+    <path
+        android:fillColor="#54E6FF"
+        android:pathData="M23,65L46,69L43,74L29,72Z"/>
 </vector>
 """, encoding="utf-8")
 
@@ -114,7 +120,7 @@ launch = Path("android/app/src/main/res/drawable/launch_background.xml")
 if launch.exists():
     launch.write_text("""<?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="#000000" />
+    <item android:drawable="#08152E" />
     <item
         android:width="96dp"
         android:height="96dp"
