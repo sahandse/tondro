@@ -6,6 +6,7 @@ import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
 import '../../../app/widgets/tondro_brand.dart';
 
+import '../../browser/presentation/browser_page.dart';
 import '../../downloads/domain/download_category.dart';
 import '../../downloads/domain/download_item.dart';
 import '../../downloads/presentation/downloads_controller.dart';
@@ -211,6 +212,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'مرورگر',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => BrowserPage(
+                  downloadsController: _controller,
+                ),
+              ),
+            ),
+            icon: const Icon(Icons.public_rounded),
+          ),
           IconButton(
             tooltip: 'تنظیمات',
             onPressed: () async {
