@@ -14,13 +14,14 @@ class SegmentedDownloadService {
   Future<bool> download({
     required DownloadItem item,
     required int segments,
+    Map<String, String> headers = const {},
     required void Function(int received, int total, double speedBytesPerSecond)
         onProgress,
   }) async {
     final segmentCount = segments.clamp(1, 16);
     if (segmentCount <= 1) return false;
 
-    final probe = await _probe(item.url);
+    final probe = await _probe(item.url, headers);
     if (!probe.supportsRange || probe.totalBytes <= 0) {
       return false;
     }
@@ -80,6 +81,7 @@ class SegmentedDownloadService {
           IOSink? sink;
           try {
             final request = await client.getUrl(Uri.parse(item.url));
+            headers.forEach(request.headers.set);
             request.headers.set(
               HttpHeaders.rangeHeader,
               'bytes=${range.start + existing}-${range.end}',
@@ -163,10 +165,14 @@ class SegmentedDownloadService {
     }
   }
 
-  Future<_SegmentProbe> _probe(String url) async {
+  Future<_SegmentProbe> _probe(
+    String url,
+    Map<String, String> headers,
+  ) async {
     final client = HttpClient();
     try {
       final request = await client.getUrl(Uri.parse(url));
+      headers.forEach(request.headers.set);
       request.headers.set(HttpHeaders.rangeHeader, 'bytes=0-0');
       final response = await request.close();
       await response.drain<void>();
