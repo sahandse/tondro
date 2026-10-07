@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../settings/data/settings_store.dart';
 import '../../site_profiles/data/site_profile_store.dart';
 import '../../site_profiles/domain/site_profile.dart';
+import '../../widget/data/tondro_widget_service.dart';
 import '../../settings/domain/download_settings.dart';
 import '../data/background_download_service.dart';
 import '../data/download_store.dart';
@@ -43,6 +44,8 @@ class DownloadsController extends ChangeNotifier {
   final Set<String> _segmentedActive = {};
 
   Timer? _schedulerTimer;
+  Timer? _widgetUpdateTimer;
+  final TondroWidgetService _widgetService = TondroWidgetService();
   bool _loading = true;
   DownloadSettings _settings = const DownloadSettings();
 
@@ -92,6 +95,7 @@ class DownloadsController extends ChangeNotifier {
 
     _loading = false;
     notifyListeners();
+    _scheduleWidgetUpdate();
     await _persist();
     await _startDueScheduled();
     await _enqueueReadyItems();
@@ -144,6 +148,7 @@ class DownloadsController extends ChangeNotifier {
     _items.insert(0, item);
     await _persist();
     notifyListeners();
+    _scheduleWidgetUpdate();
 
     if (scheduledAt == null || !scheduledAt.isAfter(DateTime.now())) {
       await _enqueue(item);
@@ -192,12 +197,14 @@ class DownloadsController extends ChangeNotifier {
     }
     await _siteProfileStore.save(_siteProfiles);
     notifyListeners();
+    _scheduleWidgetUpdate();
   }
 
   Future<void> deleteSiteProfile(String id) async {
     _siteProfiles.removeWhere((profile) => profile.id == id);
     await _siteProfileStore.save(_siteProfiles);
     notifyListeners();
+    _scheduleWidgetUpdate();
   }
 
   Future<String> _uniqueFileName(Directory directory, String original) async {
@@ -245,6 +252,7 @@ class DownloadsController extends ChangeNotifier {
 
     if (due.isNotEmpty) {
       notifyListeners();
+    _scheduleWidgetUpdate();
       await _persist();
     }
   }
@@ -302,6 +310,7 @@ class DownloadsController extends ChangeNotifier {
       clearSchedule: true,
     );
     notifyListeners();
+    _scheduleWidgetUpdate();
     await _persist();
 
     var fallbackToBackground = false;
@@ -321,6 +330,7 @@ class DownloadsController extends ChangeNotifier {
             clearError: true,
           );
           notifyListeners();
+    _scheduleWidgetUpdate();
         },
       );
 
@@ -360,6 +370,7 @@ class DownloadsController extends ChangeNotifier {
     } finally {
       _segmentedActive.remove(id);
       notifyListeners();
+    _scheduleWidgetUpdate();
       await _persist();
 
       final currentIndex = _items.indexWhere((item) => item.id == id);
@@ -407,6 +418,7 @@ class DownloadsController extends ChangeNotifier {
       clearSchedule: true,
     );
     notifyListeners();
+    _scheduleWidgetUpdate();
     await _persist();
 
     try {
@@ -425,6 +437,7 @@ class DownloadsController extends ChangeNotifier {
             clearError: true,
           );
           notifyListeners();
+    _scheduleWidgetUpdate();
         },
       );
 
@@ -458,6 +471,7 @@ class DownloadsController extends ChangeNotifier {
     } finally {
       _throttledActive.remove(id);
       notifyListeners();
+    _scheduleWidgetUpdate();
       await _persist();
       _pumpThrottledQueue();
     }
@@ -501,6 +515,7 @@ class DownloadsController extends ChangeNotifier {
     }
 
     notifyListeners();
+    _scheduleWidgetUpdate();
     unawaited(_persist());
   }
 
@@ -526,6 +541,7 @@ class DownloadsController extends ChangeNotifier {
       clearSchedule: true,
     );
     notifyListeners();
+    _scheduleWidgetUpdate();
   }
 
   Future<void> pause(String id) async {
@@ -536,6 +552,7 @@ class DownloadsController extends ChangeNotifier {
     if (item.scheduledAt != null && item.scheduledAt!.isAfter(DateTime.now())) {
       _items[index] = item.copyWith(status: DownloadStatus.paused);
       notifyListeners();
+    _scheduleWidgetUpdate();
       await _persist();
       return;
     }
@@ -547,6 +564,7 @@ class DownloadsController extends ChangeNotifier {
         speedBytesPerSecond: 0,
       );
       notifyListeners();
+    _scheduleWidgetUpdate();
       await _persist();
       return;
     }
@@ -558,6 +576,7 @@ class DownloadsController extends ChangeNotifier {
         speedBytesPerSecond: 0,
       );
       notifyListeners();
+    _scheduleWidgetUpdate();
       await _persist();
       return;
     }
@@ -575,6 +594,7 @@ class DownloadsController extends ChangeNotifier {
       clearError: true,
     );
     notifyListeners();
+    _scheduleWidgetUpdate();
     await _persist();
 
     if (_settings.speedLimitKbps > 0) {
@@ -615,6 +635,7 @@ class DownloadsController extends ChangeNotifier {
     await _deleteSegmentParts(item.savePath);
 
     notifyListeners();
+    _scheduleWidgetUpdate();
     await _persist();
   }
 
@@ -651,6 +672,7 @@ class DownloadsController extends ChangeNotifier {
       wifiOnly: value.wifiOnly,
     );
     notifyListeners();
+    _scheduleWidgetUpdate();
     await _persist();
 
     if (value.speedLimitKbps > 0) {
@@ -659,6 +681,40 @@ class DownloadsController extends ChangeNotifier {
       _pumpSegmentedQueue();
     } else {
       await _enqueueReadyItems();
+    }
+  }
+
+  void _scheduleWidgetUpdate() {
+    if (_widgetUpdateTimer?.isActive ?? false) return;
+    _widgetUpdateTimer = Timer(
+      const Duration(milliseconds: 700),
+      () => unawaited(_widgetService.update(_items)),
+    );
+  }
+
+  Future<void> requestHomeWidget() => _widgetService.requestPin();
+
+  Future<Uri?> initialWidgetLaunch() => _widgetService.initialLaunch();
+
+  Stream<Uri?> get widgetClicks => _widgetService.clicks;
+
+  Future<void> handleWidgetAction(Uri? uri) async {
+    if (uri == null || uri.scheme != 'tondro') return;
+    if (uri.host == 'pause') {
+      for (final item in _items) {
+        if (item.status == DownloadStatus.downloading) {
+          await pause(item.id);
+          return;
+        }
+      }
+    }
+    if (uri.host == 'resume') {
+      for (final item in _items) {
+        if (item.status == DownloadStatus.paused) {
+          await start(item.id);
+          return;
+        }
+      }
     }
   }
 
@@ -689,6 +745,7 @@ class DownloadsController extends ChangeNotifier {
       wifiOnly: _settings.wifiOnly,
     );
     notifyListeners();
+    _scheduleWidgetUpdate();
     await _persist();
   }
 
@@ -714,6 +771,7 @@ class DownloadsController extends ChangeNotifier {
       speedBytesPerSecond: 0,
     );
     notifyListeners();
+    _scheduleWidgetUpdate();
     await _persist();
     await _startDueScheduled();
   }
@@ -732,6 +790,7 @@ class DownloadsController extends ChangeNotifier {
   @override
   void dispose() {
     _schedulerTimer?.cancel();
+    _widgetUpdateTimer?.cancel();
     for (final id in _segmentedActive.toList()) {
       _segmentedService.pause(id);
     }
