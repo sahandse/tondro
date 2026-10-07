@@ -261,7 +261,68 @@ class DownloadsController extends ChangeNotifier {
 
   int _segmentsFor(DownloadItem item) {
     final profileSegments = _profileForUrl(item.url)?.maxSegments;
-    return (profileSegments ?? _settings.maxSegments).clamp(1, 16);
+    if (profileSegments != null) {
+      return item.supportsRange ? profileSegments.clamp(1, 16) : 1;
+    }
+
+    final cap = _settings.maxSegments.clamp(1, 16);
+    if (!_settings.smartSegments) return item.supportsRange ? cap : 1;
+    if (!item.supportsRange || item.totalBytes <= 0) return 1;
+
+    final bytes = item.totalBytes;
+    final suggested = switch (bytes) {
+      < 5 * 1024 * 1024 => 1,
+      < 20 * 1024 * 1024 => 2,
+      < 100 * 1024 * 1024 => 4,
+      < 500 * 1024 * 1024 => 8,
+      _ => 16,
+    };
+    return suggested > cap ? cap : suggested;
+  }
+
+  Future<void> _onDownloadCompleted(String id) async {
+    final index = _items.indexWhere((item) => item.id == id);
+    if (index < 0) return;
+
+    final file = File(_items[index].savePath);
+    if (!await file.exists()) return;
+
+    try {
+      final digest = await sha256.bind(file.openRead()).first;
+      final computed = digest.toString().toLowerCase();
+      final expected = _items[index].expectedSha256?.toLowerCase();
+      final mismatch = expected != null &&
+          expected.isNotEmpty &&
+          expected != computed;
+
+      _items[index] = _items[index].copyWith(
+        computedSha256: computed,
+        status: mismatch ? DownloadStatus.failed : DownloadStatus.completed,
+        errorMessage: mismatch ? 'SHA-256 فایل با مقدار مورد انتظار تطابق ندارد.' : null,
+        clearError: !mismatch,
+        speedBytesPerSecond: 0,
+      );
+      notifyListeners();
+      _scheduleWidgetUpdate();
+      await _persist();
+    } catch (_) {
+      // Hash failure must not discard a successfully downloaded file.
+    }
+  }
+
+  Future<String?> calculateSha256(String id) async {
+    final index = _items.indexWhere((item) => item.id == id);
+    if (index < 0) return null;
+    final file = File(_items[index].savePath);
+    if (!await file.exists()) return null;
+
+    final digest = await sha256.bind(file.openRead()).first;
+    final computed = digest.toString().toLowerCase();
+    _items[index] = _items[index].copyWith(computedSha256: computed);
+    notifyListeners();
+    _scheduleWidgetUpdate();
+    await _persist();
+    return computed;
   }
 
   Future<void> saveSiteProfile(SiteProfile profile) async {
@@ -419,6 +480,7 @@ class DownloadsController extends ChangeNotifier {
           receivedBytes: _items[doneIndex].totalBytes,
           speedBytesPerSecond: 0,
         );
+        unawaited(_onDownloadCompleted(id));
       } else {
         fallbackToBackground = true;
         _items[doneIndex] = _items[doneIndex].copyWith(
@@ -524,6 +586,7 @@ class DownloadsController extends ChangeNotifier {
           status: DownloadStatus.completed,
           speedBytesPerSecond: 0,
         );
+        unawaited(_onDownloadCompleted(id));
       }
     } on ThrottledDownloadCanceled {
       final pausedIndex = _items.indexWhere((item) => item.id == id);
@@ -593,6 +656,9 @@ class DownloadsController extends ChangeNotifier {
     notifyListeners();
     _scheduleWidgetUpdate();
     unawaited(_persist());
+    if (status == DownloadStatus.completed) {
+      unawaited(_onDownloadCompleted(current.id));
+    }
   }
 
   void _handleProgressUpdate(TaskProgressUpdate update) {
