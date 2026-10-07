@@ -6,6 +6,7 @@ import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
 import '../../../app/widgets/tondro_brand.dart';
 
+import '../../browser/domain/media_detector.dart';
 import '../../browser/presentation/browser_page.dart';
 import '../../downloads/domain/download_category.dart';
 import '../../downloads/domain/download_item.dart';
@@ -83,7 +84,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       if (url == null) continue;
       _lastClipboardUrl = url;
       if (!mounted) return;
-      await _showAddDownload(initialUrl: url);
+      await _handleIncomingUrl(url);
       break;
     }
   }
@@ -101,8 +102,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           SnackBar(
             content: const Text('لینک دانلود در Clipboard پیدا شد'),
             action: SnackBarAction(
-              label: 'دانلود',
-              onPressed: () => unawaited(_showAddDownload(initialUrl: url)),
+              label: MediaDetector.isSupportedSocialPage(url) ? 'باز کردن' : 'دانلود',
+              onPressed: () => unawaited(_handleIncomingUrl(url)),
             ),
           ),
         );
@@ -123,6 +124,27 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
     return url;
   }
+  Future<void> _handleIncomingUrl(String url) async {
+    if (MediaDetector.isDirectDownloadUrl(url)) {
+      await _showAddDownload(initialUrl: url);
+      return;
+    }
+
+    if (MediaDetector.isSupportedSocialPage(url)) {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => BrowserPage(
+            downloadsController: _controller,
+            initialUrl: url,
+          ),
+        ),
+      );
+      return;
+    }
+
+    await _showAddDownload(initialUrl: url);
+  }
+
   Future<void> _showAddDownload({String? initialUrl}) async {
     final request = await showModalBottomSheet<NewDownloadRequest>(
       context: context,
