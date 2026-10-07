@@ -7,6 +7,7 @@ class DownloadSettings {
     this.notifications = true,
     this.speedLimitKbps = 0,
     this.maxSegments = 4,
+    this.smartSegments = true,
   });
 
   final int maxConcurrentDownloads;
@@ -16,6 +17,7 @@ class DownloadSettings {
   final bool notifications;
   final int speedLimitKbps;
   final int maxSegments;
+  final bool smartSegments;
 
   DownloadSettings copyWith({
     int? maxConcurrentDownloads,
@@ -25,6 +27,7 @@ class DownloadSettings {
     bool? notifications,
     int? speedLimitKbps,
     int? maxSegments,
+    bool? smartSegments,
   }) {
     return DownloadSettings(
       maxConcurrentDownloads:
@@ -35,6 +38,7 @@ class DownloadSettings {
       notifications: notifications ?? this.notifications,
       speedLimitKbps: speedLimitKbps ?? this.speedLimitKbps,
       maxSegments: maxSegments ?? this.maxSegments,
+      smartSegments: smartSegments ?? this.smartSegments,
     );
   }
 }
