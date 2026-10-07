@@ -6,6 +6,7 @@ import '../../../app/widgets/tondro_brand.dart';
 import '../../downloads/presentation/downloads_controller.dart';
 import '../../site_profiles/presentation/site_profiles_page.dart';
 import '../../torrent/presentation/torrent_page.dart';
+import '../domain/download_settings.dart';
 
 class DownloadSettingsPage extends StatefulWidget {
   const DownloadSettingsPage({
