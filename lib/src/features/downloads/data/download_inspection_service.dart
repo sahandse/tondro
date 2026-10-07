@@ -23,7 +23,7 @@ class DownloadInspectionService {
           (response.contentLength > 0 ? response.contentLength : 0);
       final mimeType = response.headers.contentType?.mimeType;
       final fileName = _fileNameFromDisposition(
-            response.headers.value(HttpHeaders.contentDispositionHeader),
+            response.headers.value('content-disposition'),
           ) ??
           _fileNameFromUri(uri);
 
