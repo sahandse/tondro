@@ -28,7 +28,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   String? _lastClipboardUrl;
   String _filter = 'all';
   String _sort = 'newest';
-  int _navIndex = 0;
 
   @override
   void initState() {
@@ -180,28 +179,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       );
     }
   }
-  Widget _filterChip(String value, String label) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: _filter == value,
-        onSelected: (_) => setState(() => _filter = value),
-      ),
-    );
-  }
-
   List<DownloadItem> _visibleItems(List<DownloadItem> source) {
     final list = source.where((item) {
       final category = detectDownloadCategory(item.fileName);
       return switch (_filter) {
         'active' => item.status == DownloadStatus.downloading || item.status == DownloadStatus.queued,
         'completed' => item.status == DownloadStatus.completed,
-        'image' => category == DownloadCategory.image,
-        'video' => category == DownloadCategory.video,
-        'audio' => category == DownloadCategory.audio,
-        'document' => category == DownloadCategory.document,
-        'archive' => category == DownloadCategory.archive,
         _ => true,
       };
     }).toList();
@@ -221,272 +204,242 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final baseItems = _navIndex == 2
-        ? _controller.items.where((e) => e.status == DownloadStatus.completed).toList()
-        : _controller.items;
-    final items = _visibleItems(baseItems);
     final allItems = _controller.items;
-    final activeCount = allItems.where((e) => e.status == DownloadStatus.downloading).length;
-    final queuedCount = allItems.where((e) => e.status == DownloadStatus.queued).length;
-    final completedCount = allItems.where((e) => e.status == DownloadStatus.completed).length;
-    final totalSpeed = allItems.where((e) => e.status == DownloadStatus.downloading).fold<double>(0, (sum, e) => sum + e.speedBytesPerSecond);
+    final items = _visibleItems(allItems);
+    final activeCount = allItems
+        .where((item) => item.status == DownloadStatus.downloading)
+        .length;
+    final queuedCount = allItems
+        .where((item) => item.status == DownloadStatus.queued)
+        .length;
+    final totalSpeed = allItems
+        .where((item) => item.status == DownloadStatus.downloading)
+        .fold<double>(0, (sum, item) => sum + item.speedBytesPerSecond);
 
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 16,
-        title: Row(
-          children: [
-            const TondroLogo(size: 38),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('تندرو', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900, height: 1.05)),
-                Text('مدیریت دانلود', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
-              ],
-            ),
-          ],
+        title: const Text(
+          'تندرو',
+          style: TextStyle(fontWeight: FontWeight.w900),
         ),
         actions: [
-          IconButton(
-            tooltip: 'مرورگر',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => BrowserPage(
-                  downloadsController: _controller,
-                ),
-              ),
-            ),
-            icon: const Icon(Icons.public_rounded),
-          ),
-          IconButton(
-            tooltip: 'تنظیمات',
-            onPressed: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => DownloadSettingsPage(controller: _controller),
-                ),
-              );
-              if (mounted) setState(() {});
-            },
-            icon: const Icon(Icons.tune_rounded),
-          ),
-        ],
-      ),
-      floatingActionButton: _navIndex == 2
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: _showAddDownload,
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('دانلود جدید'),
-            ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 104),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              XpWindowFrame(
-                title: 'نمای کلی',
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        const TondroLogo(size: 62),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                activeCount == 0 ? 'آماده برای دانلود' : '$activeCount دانلود فعال',
-                                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                totalSpeed > 0 ? '${_formatTotalSpeed(totalSpeed)} مجموع سرعت' : 'سریع، هوشمند و بدون شلوغی',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+          PopupMenuButton<String>(
+            tooltip: 'بیشتر',
+            onSelected: (value) async {
+              if (value == 'browser') {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => BrowserPage(
+                      downloadsController: _controller,
                     ),
-                    const SizedBox(height: 16),
-                    FilledButton.icon(
-                      onPressed: _showAddDownload,
-                      icon: const Icon(Icons.add_rounded),
-                      label: const Text('دانلود جدید'),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(child: _StatBox(icon: Icons.downloading_rounded, value: activeCount.toString(), label: 'فعال')),
-                  const SizedBox(width: 8),
-                  Expanded(child: _StatBox(icon: Icons.hourglass_bottom_rounded, value: queuedCount.toString(), label: 'صف')),
-                  const SizedBox(width: 8),
-                  Expanded(child: _StatBox(icon: Icons.check_box_outlined, value: completedCount.toString(), label: 'کامل')),
-                ],
-              ),
-              const SizedBox(height: 14),
-              SizedBox(
-                height: 42,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    _filterChip('all', 'همه'),
-                    _filterChip('active', 'فعال'),
-                    _filterChip('completed', 'تکمیل‌شده'),
-                    _filterChip('image', 'تصویر'),
-                    _filterChip('video', 'ویدیو'),
-                    _filterChip('audio', 'صوت'),
-                    _filterChip('document', 'سند'),
-                    _filterChip('archive', 'آرشیو'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: PopupMenuButton<String>(
-                  tooltip: 'مرتب‌سازی',
-                  initialValue: _sort,
-                  onSelected: (value) => setState(() => _sort = value),
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: 'newest', child: Text('جدیدترین')),
-                    PopupMenuItem(value: 'oldest', child: Text('قدیمی‌ترین')),
-                    PopupMenuItem(value: 'name', child: Text('نام فایل')),
-                    PopupMenuItem(value: 'size', child: Text('حجم فایل')),
-                  ],
-                  child: const Chip(
-                    avatar: Icon(Icons.sort_rounded, size: 18),
-                    label: Text('مرتب‌سازی'),
                   ),
+                );
+              }
+              if (value == 'settings') {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) =>
+                        DownloadSettingsPage(controller: _controller),
+                  ),
+                );
+                if (mounted) setState(() {});
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'browser',
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.public_rounded),
+                  title: Text('مرورگر'),
                 ),
               ),
-              const SizedBox(height: 10),
-              Expanded(
-                child: _controller.loading
-                    ? const Center(child: CircularProgressIndicator())
-                    : items.isEmpty
-                        ? const _EmptyDownloads()
-                        : ListView.separated(
-                            itemCount: items.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 12),
-                            itemBuilder: (context, index) => _DownloadCard(
-                              item: items[index],
-                              onOpen: () async {
-                                HapticFeedback.selectionClick();
-                                final opened = await _controller.openFile(items[index].id);
-                                if (!opened && context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('فایل قابل باز شدن نیست.'),
-                                    ),
-                                  );
-                                }
-                              },
-                              onPause: () {
-                                HapticFeedback.lightImpact();
-                                unawaited(_controller.pause(items[index].id));
-                              },
-                              onResume: () {
-                                HapticFeedback.lightImpact();
-                                unawaited(_controller.start(items[index].id));
-                              },
-                              onShare: () async {
-                                HapticFeedback.selectionClick();
-                                final shared =
-                                    await _controller.shareFile(items[index].id);
-                                if (!shared && context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('فایل قابل اشتراک‌گذاری نیست.'),
-                                    ),
-                                  );
-                                }
-                              },
-                              onChecksum: () async {
-                                HapticFeedback.selectionClick();
-                                final hash = await _controller
-                                    .calculateSha256(items[index].id);
-                                if (hash == null || !context.mounted) return;
-                                await Clipboard.setData(
-                                  ClipboardData(text: hash),
-                                );
-                                if (!context.mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('SHA-256 کپی شد'),
-                                  ),
-                                );
-                              },
-                              onDelete: () {
-                                HapticFeedback.mediumImpact();
-                                unawaited(_controller.remove(items[index].id));
-                              },
-                            ),
-                          ),
+              PopupMenuItem(
+                value: 'settings',
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.tune_rounded),
+                  title: Text('تنظیمات'),
+                ),
               ),
             ],
           ),
-        ),
+          const SizedBox(width: 6),
+        ],
       ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(9),
-            child: NavigationBar(
-              selectedIndex: _navIndex,
-              onDestinationSelected: (index) async {
-                HapticFeedback.selectionClick();
-                if (index == 3) {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => DownloadSettingsPage(controller: _controller),
+      floatingActionButton: FloatingActionButton(
+        tooltip: 'دانلود جدید',
+        onPressed: _showAddDownload,
+        child: const Icon(Icons.add_rounded),
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 9,
+                    height: 9,
+                    decoration: BoxDecoration(
+                      color: activeCount > 0
+                          ? theme.colorScheme.secondary
+                          : theme.colorScheme.outline,
+                      shape: BoxShape.circle,
                     ),
-                  );
-                  if (mounted) setState(() {});
-                  return;
-                }
-                setState(() {
-                  _navIndex = index;
-                  if (index == 0) _filter = 'all';
-                  if (index == 2) _filter = 'completed';
-                });
-              },
-              destinations: const [
-                NavigationDestination(
-                  icon: Icon(Icons.window_outlined),
-                  selectedIcon: Icon(Icons.window_rounded),
-                  label: 'خانه',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.download_outlined),
-                  selectedIcon: Icon(Icons.download_rounded),
-                  label: 'دانلودها',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.folder_outlined),
-                  selectedIcon: Icon(Icons.folder_rounded),
-                  label: 'فایل‌ها',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.settings_outlined),
-                  selectedIcon: Icon(Icons.settings),
-                  label: 'تنظیمات',
-                ),
-              ],
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      activeCount > 0
+                          ? '$activeCount دانلود فعال'
+                          : queuedCount > 0
+                              ? '$queuedCount دانلود در صف'
+                              : 'آماده برای دانلود',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  if (totalSpeed > 0)
+                    Text(
+                      _formatTotalSpeed(totalSpeed),
+                      textDirection: TextDirection.ltr,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.secondary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  PopupMenuButton<String>(
+                    tooltip: 'مرتب‌سازی',
+                    initialValue: _sort,
+                    onSelected: (value) => setState(() => _sort = value),
+                    icon: const Icon(Icons.sort_rounded, size: 21),
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(
+                        value: 'newest',
+                        child: Text('جدیدترین'),
+                      ),
+                      PopupMenuItem(
+                        value: 'oldest',
+                        child: Text('قدیمی‌ترین'),
+                      ),
+                      PopupMenuItem(
+                        value: 'name',
+                        child: Text('نام فایل'),
+                      ),
+                      PopupMenuItem(
+                        value: 'size',
+                        child: Text('حجم فایل'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(
+                    value: 'all',
+                    label: Text('همه'),
+                  ),
+                  ButtonSegment(
+                    value: 'active',
+                    label: Text('فعال'),
+                  ),
+                  ButtonSegment(
+                    value: 'completed',
+                    label: Text('تمام‌شده'),
+                  ),
+                ],
+                selected: {_filter},
+                onSelectionChanged: (value) {
+                  setState(() => _filter = value.first);
+                },
+                showSelectedIcon: false,
+                style: const ButtonStyle(
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: _controller.loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : items.isEmpty
+                      ? const _EmptyDownloads()
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+                          itemCount: items.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 8),
+                          itemBuilder: (context, index) => _DownloadCard(
+                            item: items[index],
+                            onOpen: () async {
+                              HapticFeedback.selectionClick();
+                              final opened =
+                                  await _controller.openFile(items[index].id);
+                              if (!opened && context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('فایل قابل باز شدن نیست.'),
+                                  ),
+                                );
+                              }
+                            },
+                            onPause: () {
+                              HapticFeedback.lightImpact();
+                              unawaited(
+                                _controller.pause(items[index].id),
+                              );
+                            },
+                            onResume: () {
+                              HapticFeedback.lightImpact();
+                              unawaited(
+                                _controller.start(items[index].id),
+                              );
+                            },
+                            onShare: () async {
+                              HapticFeedback.selectionClick();
+                              final shared =
+                                  await _controller.shareFile(items[index].id);
+                              if (!shared && context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content:
+                                        Text('فایل قابل اشتراک‌گذاری نیست.'),
+                                  ),
+                                );
+                              }
+                            },
+                            onChecksum: () async {
+                              final hash = await _controller
+                                  .calculateSha256(items[index].id);
+                              if (hash == null || !context.mounted) return;
+                              await Clipboard.setData(
+                                ClipboardData(text: hash),
+                              );
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('SHA-256 کپی شد'),
+                                ),
+                              );
+                            },
+                            onDelete: () {
+                              HapticFeedback.mediumImpact();
+                              unawaited(
+                                _controller.remove(items[index].id),
+                              );
+                            },
+                          ),
+                        ),
+            ),
+          ],
         ),
       ),
     );
