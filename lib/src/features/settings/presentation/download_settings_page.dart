@@ -5,6 +5,7 @@ import '../../backup/data/app_backup_service.dart';
 import '../../../app/widgets/tondro_brand.dart';
 import '../../downloads/presentation/downloads_controller.dart';
 import '../../site_profiles/presentation/site_profiles_page.dart';
+import '../../torrent/presentation/torrent_page.dart';
 
 class DownloadSettingsPage extends StatefulWidget {
   const DownloadSettingsPage({
@@ -224,6 +225,25 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
                   );
                   if (mounted) setState(() {});
                 },
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _SectionCard(
+            title: 'Torrent',
+            children: [
+              ListTile(
+                leading: const Icon(Icons.hub_outlined),
+                title: const Text('Torrent / Magnet'),
+                subtitle: const Text(
+                  'ماژول اختیاری برای Magnet و فایل .torrent',
+                ),
+                trailing: const Icon(Icons.chevron_left_rounded),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const TorrentPage(),
+                  ),
+                ),
               ),
             ],
           ),
