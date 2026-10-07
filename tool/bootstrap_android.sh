@@ -83,12 +83,40 @@ if manifest.exists():
     if 'TondroWidgetProvider' not in text:
         text = text.replace('</application>', widget_receiver + '    </application>', 1)
 
-    text = text.replace(
-        '<application',
-        '<application android:icon="@drawable/ic_tondro" android:roundIcon="@drawable/ic_tondro"',
-        1,
-    )
+    import re
+    if 'android:icon=' in text:
+        text = re.sub(
+            r'android:icon="[^"]+"',
+            'android:icon="@drawable/ic_tondro"',
+            text,
+            count=1,
+        )
+    else:
+        text = text.replace(
+            '<application',
+            '<application android:icon="@drawable/ic_tondro"',
+            1,
+        )
+
+    if 'android:roundIcon=' in text:
+        text = re.sub(
+            r'android:roundIcon="[^"]+"',
+            'android:roundIcon="@drawable/ic_tondro"',
+            text,
+            count=1,
+        )
+    else:
+        text = text.replace(
+            '<application',
+            '<application android:roundIcon="@drawable/ic_tondro"',
+            1,
+        )
+
     manifest.write_text(text, encoding="utf-8")
+
+    # Fail fast here instead of several minutes later in Gradle.
+    import xml.etree.ElementTree as ET
+    ET.parse(manifest)
 
 icon = Path("android/app/src/main/res/drawable/ic_tondro.xml")
 icon.parent.mkdir(parents=True, exist_ok=True)
