@@ -14,8 +14,8 @@ class TondroLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox.square(
       dimension: size,
-      child: CustomPaint(
-        painter: const _TondroRibbonPainter(),
+      child: const CustomPaint(
+        painter: _TondroRibbonPainter(),
       ),
     );
   }
