@@ -98,21 +98,23 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist
-          cp build/app/outputs/flutter-apk/app-release.apk dist/Tondro-1.1.1-release.apk
-          cp build/app/outputs/bundle/release/app-release.aab dist/Tondro-1.1.1-release.aab
-          sha256sum dist/* > dist/Tondro-1.1.1-SHA256SUMS.txt
+          VERSION="$(awk '/^version:/ {print $2}' pubspec.yaml)"
+          NAME="${VERSION%%+*}"
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/Tondro-${NAME}-release.apk"
+          cp build/app/outputs/bundle/release/app-release.aab "dist/Tondro-${NAME}-release.aab"
+          sha256sum dist/* > "dist/Tondro-${NAME}-SHA256SUMS.txt"
 
       - name: Upload signed release
         uses: actions/upload-artifact@v4
         with:
-          name: tondro-1.1.1-signed-release
+          name: tondro-signed-release
           path: dist/*
           if-no-files-found: error
 
       - name: Upload encrypted signing backup
         uses: actions/upload-artifact@v4
         with:
-          name: tondro-1.1.1-signing-backup-encrypted
+          name: tondro-signing-backup-encrypted
           path: |
             signing-backup.enc
             signing-backup-key.enc
