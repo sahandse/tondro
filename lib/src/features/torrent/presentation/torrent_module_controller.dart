@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dtorrent_task_v2/dtorrent_task_v2.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show ChangeNotifier;
 import 'package:path_provider/path_provider.dart';
 
 class TorrentSession {
@@ -62,8 +64,7 @@ class TorrentModuleController extends ChangeNotifier {
       throw const FormatException('Magnet معتبر نیست.');
     }
 
-    final parsedUri = Uri.tryParse(uri);
-    final name = parsedUri?.queryParameters['dn'] ?? 'Magnet download';
+    final name = magnet.displayName ?? 'Magnet download';
     final session = TorrentSession(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       name: name,
@@ -81,17 +82,17 @@ class TorrentModuleController extends ChangeNotifier {
 
     listener
       ..on<MetaDataDownloadProgress>((event) {
-        session.metadataProgress = event.progress.clamp(0, 1);
+        session.metadataProgress = event.progress.clamp(0, 1).toDouble();
         notifyListeners();
       })
       ..on<MetaDataDownloadComplete>((event) async {
         try {
-          final msg = decode(event.data);
-          final torrentMap = <String, dynamic>{'info': msg};
-          final model = parseTorrentFileContent(torrentMap);
-          if (model == null) {
-            throw const FormatException('Metadata قابل استفاده نیست.');
-          }
+          final wrappedTorrent = Uint8List.fromList([
+            ...ascii.encode('d4:info'),
+            ...event.data,
+            0x65,
+          ]);
+          final model = TorrentParser.parseBytes(wrappedTorrent);
 
           final task = TorrentTask.newTask(
             model,
@@ -115,8 +116,7 @@ class TorrentModuleController extends ChangeNotifier {
           notifyListeners();
           await task.start();
 
-          final metadataPeers = metadata.activePeers;
-          for (final peer in metadataPeers) {
+          for (final peer in metadata.activePeers) {
             task.addPeer(peer.address, PeerSource.manual, type: peer.type);
           }
 
@@ -139,9 +139,14 @@ class TorrentModuleController extends ChangeNotifier {
             completer.completeError(error, stackTrace);
           }
         }
+      })
+      ..on<MetaDataDownloadFailed>((event) {
+        if (!completer.isCompleted) {
+          completer.completeError(StateError(event.error));
+        }
       });
 
-    metadata.startDownload();
+    unawaited(metadata.startDownload());
 
     try {
       await completer.future.timeout(const Duration(minutes: 3));
