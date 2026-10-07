@@ -36,7 +36,9 @@ class BackgroundDownloadService {
     if (notifications) {
       _downloader.configureNotification(
         running: const TaskNotification('تندرو', 'در حال دانلود {filename}'),
-        complete: const TaskNotification('دانلود کامل شد', '{filename}'),
+        complete: showComplete
+            ? const TaskNotification('دانلود کامل شد', '{filename}')
+            : null,
         error: const TaskNotification('دانلود ناموفق بود', '{filename}'),
         paused: const TaskNotification('دانلود متوقف شد', '{filename}'),
         progressBar: true,
@@ -126,7 +128,10 @@ class BackgroundDownloadService {
     return _downloader.openFile(filePath: filePath);
   }
 
-  Future<void> configureNotifications(bool enabled) async {
+  Future<void> configureNotifications(
+    bool enabled, {
+    bool showComplete = true,
+  }) async {
     if (enabled) {
       _downloader.configureNotification(
         running: const TaskNotification('تندرو', 'در حال دانلود {filename}'),
