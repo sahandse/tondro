@@ -69,7 +69,7 @@ class _BrowserPageState extends State<BrowserPage> {
       unawaited(
         _web.loadHtmlString(
           '<html><body style="font-family:sans-serif;padding:32px">'
-          '<h3>Tondro Browser</h3>'
+          '<h3>مرورگر تندرو</h3>'
           '<p>آدرس سایت را در نوار بالا وارد کن.</p>'
           '</body></html>',
         ),
@@ -268,7 +268,7 @@ class _BrowserPageState extends State<BrowserPage> {
         child: Padding(
           padding: const EdgeInsets.all(8),
           child: XpWindowFrame(
-            title: 'Browser Controls',
+            title: 'کنترل مرورگر',
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             child: Row(
               children: [
