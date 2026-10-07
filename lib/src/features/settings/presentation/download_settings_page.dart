@@ -151,6 +151,20 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
                 ),
               ),
               const Divider(height: 1),
+              SwitchListTile.adaptive(
+                value: settings.smartSegments,
+                title: const Text('Smart Segments'),
+                subtitle: const Text(
+                  'تعداد بخش‌ها را بر اساس حجم و قابلیت Range خودکار تنظیم می‌کند.',
+                ),
+                onChanged: (value) async {
+                  await widget.controller.updateSettings(
+                    settings.copyWith(smartSegments: value),
+                  );
+                  if (mounted) setState(() {});
+                },
+              ),
+              const Divider(height: 1),
               ListTile(
                 title: const Text('تلاش خودکار'),
                 subtitle: Text('${settings.autoRetry} بار پس از خطا'),
