@@ -91,6 +91,50 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
           ),
           const SizedBox(height: 14),
           _SectionCard(
+            title: 'پروفایل شبکه',
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                child: DropdownButtonFormField<NetworkProfilePreset>(
+                  initialValue: settings.networkProfile,
+                  decoration: const InputDecoration(
+                    labelText: 'حالت شبکه',
+                    prefixIcon: Icon(Icons.network_check_rounded),
+                  ),
+                  items: NetworkProfilePreset.values
+                      .map(
+                        (value) => DropdownMenuItem(
+                          value: value,
+                          child: Text(networkProfileLabelFa(value)),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) async {
+                    if (value == null) return;
+                    await widget.controller.applyNetworkProfile(value);
+                    if (mounted) setState(() {});
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+                child: Text(
+                  settings.networkProfile == NetworkProfilePreset.wifiFast
+                      ? '۵ دانلود هم‌زمان، تا ۱۶ Segment و فقط Wi-Fi'
+                      : settings.networkProfile == NetworkProfilePreset.dataSaver
+                          ? 'یک دانلود، یک اتصال و سقف حدود 1 MB/s'
+                          : settings.networkProfile == NetworkProfilePreset.custom
+                              ? 'تنظیمات دستی شما'
+                              : 'تعادل بین سرعت، مصرف دیتا و تعداد اتصال',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _SectionCard(
             title: 'اتصال و صف',
             children: [
               SwitchListTile.adaptive(
@@ -257,6 +301,37 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
                   MaterialPageRoute<void>(
                     builder: (_) => const TorrentPage(),
                   ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _SectionCard(
+            title: 'بعد از تکمیل',
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                child: DropdownButtonFormField<CompletionAction>(
+                  initialValue: settings.completionAction,
+                  decoration: const InputDecoration(
+                    labelText: 'عملیات پایان دانلود',
+                    prefixIcon: Icon(Icons.done_all_rounded),
+                  ),
+                  items: CompletionAction.values
+                      .map(
+                        (value) => DropdownMenuItem(
+                          value: value,
+                          child: Text(completionActionLabelFa(value)),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) async {
+                    if (value == null) return;
+                    await widget.controller.updateSettings(
+                      settings.copyWith(completionAction: value),
+                    );
+                    if (mounted) setState(() {});
+                  },
                 ),
               ),
             ],
