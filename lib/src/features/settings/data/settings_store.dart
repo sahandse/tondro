@@ -11,6 +11,8 @@ class SettingsStore {
   static const _speedLimit = 'settings.speedLimitKbps';
   static const _maxSegments = 'settings.maxSegments';
   static const _smartSegments = 'settings.smartSegments';
+  static const _networkProfile = 'settings.networkProfile';
+  static const _completionAction = 'settings.completionAction';
 
   Future<DownloadSettings> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -23,6 +25,14 @@ class SettingsStore {
       speedLimitKbps: prefs.getInt(_speedLimit) ?? 0,
       maxSegments: prefs.getInt(_maxSegments) ?? 4,
       smartSegments: prefs.getBool(_smartSegments) ?? true,
+      networkProfile: NetworkProfilePreset.values.firstWhere(
+        (value) => value.name == prefs.getString(_networkProfile),
+        orElse: () => NetworkProfilePreset.balanced,
+      ),
+      completionAction: CompletionAction.values.firstWhere(
+        (value) => value.name == prefs.getString(_completionAction),
+        orElse: () => CompletionAction.notify,
+      ),
     );
   }
 
@@ -37,6 +47,8 @@ class SettingsStore {
       prefs.setInt(_speedLimit, settings.speedLimitKbps),
       prefs.setInt(_maxSegments, settings.maxSegments),
       prefs.setBool(_smartSegments, settings.smartSegments),
+      prefs.setString(_networkProfile, settings.networkProfile.name),
+      prefs.setString(_completionAction, settings.completionAction.name),
     ]);
   }
 }
