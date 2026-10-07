@@ -93,7 +93,7 @@ class AppTheme {
         color: surface,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(16),
           side: BorderSide(color: border.withValues(alpha: .7)),
         ),
       ),
@@ -117,9 +117,9 @@ class AppTheme {
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: blue,
         foregroundColor: Colors.white,
-        elevation: 4,
+        elevation: 1,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
@@ -157,17 +157,17 @@ class AppTheme {
         hintStyle: baseText.bodyMedium?.copyWith(color: muted),
         labelStyle: baseText.bodyMedium?.copyWith(color: muted),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(
             color: border.withValues(alpha: .55),
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(
             color: dark ? cyan : blue,
             width: 1.6,
@@ -184,7 +184,7 @@ class AppTheme {
             vertical: 14,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(14),
           ),
           textStyle: baseText.labelLarge?.copyWith(
             fontWeight: FontWeight.w800,
@@ -200,7 +200,7 @@ class AppTheme {
             vertical: 14,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(14),
           ),
         ),
       ),
@@ -215,7 +215,7 @@ class AppTheme {
         showDragHandle: true,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
-            top: Radius.circular(28),
+            top: Radius.circular(22),
           ),
         ),
       ),
@@ -223,14 +223,14 @@ class AppTheme {
         backgroundColor: surface,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(18),
         ),
       ),
       popupMenuTheme: PopupMenuThemeData(
         color: surface,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
           side: BorderSide(color: border.withValues(alpha: .6)),
         ),
       ),
@@ -243,7 +243,7 @@ class AppTheme {
         actionTextColor: cyan,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
         ),
       ),
       switchTheme: SwitchThemeData(
