@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
-import '../../../app/widgets/tondro_brand.dart';
-
 import '../../browser/domain/media_detector.dart';
 import '../../browser/presentation/browser_page.dart';
 import '../../downloads/domain/download_category.dart';
@@ -181,7 +179,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
   List<DownloadItem> _visibleItems(List<DownloadItem> source) {
     final list = source.where((item) {
-      final category = detectDownloadCategory(item.fileName);
       return switch (_filter) {
         'active' => item.status == DownloadStatus.downloading || item.status == DownloadStatus.queued,
         'completed' => item.status == DownloadStatus.completed,
@@ -517,104 +514,138 @@ class _DownloadCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isRunning = item.status == DownloadStatus.downloading;
     final isDone = item.status == DownloadStatus.completed;
+    final failed = item.status == DownloadStatus.failed;
+    final progress = item.totalBytes > 0 ? item.progress.clamp(0, 1) : null;
 
-    return XpWindowFrame(
-      title: _xpStatusLabel(item.status),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.secondaryContainer,
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Icon(
-                    _downloadTypeIcon(item.fileName, isDone: isDone, failed: item.status == DownloadStatus.failed),
-                    color: theme.colorScheme.onSecondaryContainer,
-                  ),
+    return Material(
+      color: theme.colorScheme.surface,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: isDone ? onOpen : null,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(12, 12, 8, 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: theme.colorScheme.outline.withValues(alpha: .45),
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: failed
+                      ? theme.colorScheme.errorContainer
+                      : theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.fileName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textDirection: TextDirection.ltr,
-                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                child: Icon(
+                  _downloadTypeIcon(
+                    item.fileName,
+                    isDone: isDone,
+                    failed: failed,
+                  ),
+                  size: 20,
+                  color: failed
+                      ? theme.colorScheme.error
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      item.fileName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textDirection: TextDirection.ltr,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _subtitle(item),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _subtitle(item),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
                         ),
+                        if (item.totalBytes > 0) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            '${(item.progress * 100).clamp(0, 100).toStringAsFixed(0)}٪',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    if (!isDone) ...[
+                      const SizedBox(height: 8),
+                      LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 5,
+                        borderRadius: BorderRadius.circular(99),
                       ),
                     ],
-                  ),
-                ),
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    if (value == 'open') onOpen();
-                    if (value == 'share') onShare();
-                    if (value == 'checksum') onChecksum();
-                    if (value == 'delete') onDelete();
-                  },
-                  itemBuilder: (_) => [
-                    if (isDone)
-                      const PopupMenuItem(
-                        value: 'open',
-                        child: Text('باز کردن'),
-                      ),
-                    if (isDone)
-                      const PopupMenuItem(
-                        value: 'share',
-                        child: Text('اشتراک‌گذاری'),
-                      ),
-                    if (isDone)
-                      const PopupMenuItem(
-                        value: 'checksum',
-                        child: Text('SHA-256'),
-                      ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Text('حذف'),
-                    ),
                   ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            LinearProgressIndicator(
-              value: item.totalBytes > 0 ? item.progress.clamp(0, 1) : null,
-              borderRadius: BorderRadius.circular(99),
-              minHeight: 10,
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Text(
-                  item.totalBytes > 0 ? '${(item.progress * 100).clamp(0, 100).toStringAsFixed(0)}٪' : 'در حال اتصال…',
-                  style: theme.textTheme.labelMedium,
-                ),
-                const Spacer(),
-                if (!isDone)
-                  IconButton.filledTonal(
-                    tooltip: isRunning ? 'توقف' : 'ادامه',
-                    onPressed: isRunning ? onPause : onResume,
-                    icon: Icon(isRunning ? Icons.pause_rounded : Icons.play_arrow_rounded),
+              ),
+              const SizedBox(width: 4),
+              if (!isDone && !failed)
+                IconButton(
+                  tooltip: isRunning ? 'توقف' : 'ادامه',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: isRunning ? onPause : onResume,
+                  icon: Icon(
+                    isRunning ? Icons.pause_rounded : Icons.play_arrow_rounded,
                   ),
-              ],
-            ),
-          ],
+                ),
+              PopupMenuButton<String>(
+                tooltip: 'بیشتر',
+                onSelected: (value) {
+                  if (value == 'open') onOpen();
+                  if (value == 'share') onShare();
+                  if (value == 'checksum') onChecksum();
+                  if (value == 'delete') onDelete();
+                },
+                itemBuilder: (_) => [
+                  if (isDone)
+                    const PopupMenuItem(
+                      value: 'open',
+                      child: Text('باز کردن'),
+                    ),
+                  if (isDone)
+                    const PopupMenuItem(
+                      value: 'share',
+                      child: Text('اشتراک‌گذاری'),
+                    ),
+                  if (isDone)
+                    const PopupMenuItem(
+                      value: 'checksum',
+                      child: Text('SHA-256'),
+                    ),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Text('حذف'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -622,19 +653,14 @@ class _DownloadCard extends StatelessWidget {
 
   String _subtitle(DownloadItem item) {
     final status = _statusLabel(item.status);
-    final category = categoryLabelFa(detectDownloadCategory(item.fileName));
-    if (item.scheduledAt != null &&
-        item.scheduledAt!.isAfter(DateTime.now())) {
-      return 'زمان‌بندی • $category • ${formatDownloadDateTime(item.scheduledAt!)}';
+    if (item.scheduledAt != null && item.scheduledAt!.isAfter(DateTime.now())) {
+      return 'زمان‌بندی • ${formatDownloadDateTime(item.scheduledAt!)}';
     }
-    if (item.status != DownloadStatus.downloading) return '$status • $category';
-
+    if (item.status != DownloadStatus.downloading) return status;
     final speed = _formatSpeed(item.speedBytesPerSecond);
     final eta = _formatEta(item.eta);
     if (speed == null) return status;
-    return eta == null
-        ? '$status • $category • $speed'
-        : '$status • $category • $speed • $eta مانده';
+    return eta == null ? speed : '$speed • $eta مانده';
   }
 
   String _statusLabel(DownloadStatus status) => switch (status) {
@@ -667,48 +693,6 @@ class _DownloadCard extends StatelessWidget {
     return '${duration.inSeconds}ث';
   }
 }
-
-
-class _StatBox extends StatelessWidget {
-  const _StatBox({
-    required this.icon,
-    required this.value,
-    required this.label,
-  });
-
-  final IconData icon;
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 8),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        border: Border.all(color: theme.colorScheme.outline),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: theme.brightness == Brightness.dark ? .35 : .12),
-            offset: const Offset(2, 2),
-            blurRadius: 0,
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 19),
-          const SizedBox(height: 5),
-          Text(value, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
-          Text(label, style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-        ],
-      ),
-    );
-  }
-}
-
 String _formatTotalSpeed(double bytesPerSecond) {
   if (bytesPerSecond >= 1024 * 1024) {
     return '${(bytesPerSecond / (1024 * 1024)).toStringAsFixed(1)} MB/s';
@@ -719,14 +703,6 @@ String _formatTotalSpeed(double bytesPerSecond) {
   return '${bytesPerSecond.toStringAsFixed(0)} B/s';
 }
 
-
-String _xpStatusLabel(DownloadStatus status) => switch (status) {
-      DownloadStatus.queued => 'Queued',
-      DownloadStatus.downloading => 'Downloading...',
-      DownloadStatus.paused => 'Paused',
-      DownloadStatus.completed => 'Completed',
-      DownloadStatus.failed => 'Error',
-    };
 
 IconData _downloadTypeIcon(
   String fileName, {
