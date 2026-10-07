@@ -9,6 +9,7 @@ class DownloadItem {
     required this.fileName,
     required this.savePath,
     required this.createdAt,
+    this.relativeDirectory,
     this.status = DownloadStatus.queued,
     this.receivedBytes = 0,
     this.totalBytes = 0,
@@ -23,6 +24,7 @@ class DownloadItem {
   final String fileName;
   final String savePath;
   final DateTime createdAt;
+  final String? relativeDirectory;
   final DownloadStatus status;
   final int receivedBytes;
   final int totalBytes;
@@ -41,6 +43,7 @@ class DownloadItem {
 
   DownloadItem copyWith({
     DownloadStatus? status,
+    String? relativeDirectory,
     int? receivedBytes,
     int? totalBytes,
     double? speedBytesPerSecond,
@@ -56,6 +59,7 @@ class DownloadItem {
       fileName: fileName,
       savePath: savePath,
       createdAt: createdAt,
+      relativeDirectory: relativeDirectory ?? this.relativeDirectory,
       status: status ?? this.status,
       receivedBytes: receivedBytes ?? this.receivedBytes,
       totalBytes: totalBytes ?? this.totalBytes,
@@ -72,6 +76,7 @@ class DownloadItem {
         'fileName': fileName,
         'savePath': savePath,
         'createdAt': createdAt.toIso8601String(),
+        'relativeDirectory': relativeDirectory,
         'status': status.name,
         'receivedBytes': receivedBytes,
         'totalBytes': totalBytes,
@@ -86,6 +91,7 @@ class DownloadItem {
         fileName: map['fileName'] as String,
         savePath: map['savePath'] as String,
         createdAt: DateTime.parse(map['createdAt'] as String),
+        relativeDirectory: map['relativeDirectory'] as String?,
         status: DownloadStatus.values.firstWhere(
           (value) => value.name == map['status'],
           orElse: () => DownloadStatus.paused,
