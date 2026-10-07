@@ -662,6 +662,36 @@ class DownloadsController extends ChangeNotifier {
     }
   }
 
+  Future<void> reloadFromStores() async {
+    _settings = await _settingsStore.load();
+    _siteProfiles
+      ..clear()
+      ..addAll(await _siteProfileStore.load());
+
+    final stored = await _store.load();
+    _items
+      ..clear()
+      ..addAll(
+        stored.map((item) {
+          if (item.status == DownloadStatus.downloading) {
+            return item.copyWith(
+              status: DownloadStatus.paused,
+              speedBytesPerSecond: 0,
+            );
+          }
+          return item;
+        }),
+      );
+
+    await _service.configureNotifications(_settings.notifications);
+    await _service.updateRuntimeSettings(
+      maxConcurrent: _settings.maxConcurrentDownloads,
+      wifiOnly: _settings.wifiOnly,
+    );
+    notifyListeners();
+    await _persist();
+  }
+
   Future<bool> openFile(String id) async {
     final item = _items.cast<DownloadItem?>().firstWhere(
           (element) => element?.id == id,
