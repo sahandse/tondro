@@ -1,6 +1,13 @@
 name: Signed Android Release
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - pubspec.yaml
+      - lib/src/app/widgets/tondro_brand.dart
+      - tool/bootstrap_android.sh
+      - .github/workflows/signed-release.yml
   workflow_dispatch:
 
 jobs:
