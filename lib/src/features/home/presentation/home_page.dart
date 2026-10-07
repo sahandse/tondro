@@ -232,8 +232,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                     ),
                   ),
                 );
+                return;
               }
               if (value == 'settings') {
+                if (!mounted) return;
                 await Navigator.of(context).push(
                   MaterialPageRoute<void>(
                     builder: (_) =>
