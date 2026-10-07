@@ -128,19 +128,13 @@ icon.write_text("""<vector xmlns:android="http://schemas.android.com/apk/res/and
     <path android:fillColor="#08152E" android:pathData="M0,0h108v108h-108z"/>
     <path
         android:fillColor="#54E6FF"
-        android:pathData="M54,9C35,20 31,35 44,45C57,55 72,53 78,42C82,34 73,27 54,9Z"/>
+        android:pathData="M47,18h14v39h14L54,80L33,57h14z"/>
     <path
-        android:fillColor="#177FFF"
-        android:pathData="M35,38C42,50 67,51 72,63C76,72 66,80 55,81C64,70 55,62 40,56C27,51 26,44 35,38Z"/>
+        android:fillColor="#1785FF"
+        android:pathData="M54,80L75,57H61v-8L54,56z"/>
     <path
-        android:fillColor="#1553E8"
-        android:pathData="M23,65L46,69L46,59L54,81L85,66L73,89C60,101 45,100 32,88Z"/>
-    <path
-        android:fillColor="#79F2FF"
-        android:pathData="M54,9C46,15 40,20 36,26C43,19 50,16 58,14Z"/>
-    <path
-        android:fillColor="#54E6FF"
-        android:pathData="M23,65L46,69L43,74L29,72Z"/>
+        android:fillColor="#2356F6"
+        android:pathData="M34,88h40a5,5 0 0,1 0,10H34a5,5 0 0,1 0,-10z"/>
 </vector>
 """, encoding="utf-8")
 
