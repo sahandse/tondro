@@ -242,7 +242,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('تندرو', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900, height: 1.05)),
-                Text('XP MONO', style: theme.textTheme.labelSmall?.copyWith(letterSpacing: 1.8, color: theme.colorScheme.onSurfaceVariant)),
+                Text('مدیریت دانلود', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
               ],
             ),
           ],
@@ -282,12 +282,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 104),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 104),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               XpWindowFrame(
-                title: 'Tondro.exe',
+                title: 'نمای کلی',
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -305,7 +305,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                totalSpeed > 0 ? '${_formatTotalSpeed(totalSpeed)} مجموع سرعت' : 'Tondro XP Mono • Fast & Simple',
+                                totalSpeed > 0 ? '${_formatTotalSpeed(totalSpeed)} مجموع سرعت' : 'سریع، هوشمند و بدون شلوغی',
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),
@@ -324,7 +324,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   ],
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(child: _StatBox(icon: Icons.downloading_rounded, value: activeCount.toString(), label: 'فعال')),
@@ -642,7 +642,7 @@ class _DownloadCard extends StatelessWidget {
             const SizedBox(height: 14),
             LinearProgressIndicator(
               value: item.totalBytes > 0 ? item.progress.clamp(0, 1) : null,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(99),
               minHeight: 10,
             ),
             const SizedBox(height: 10),
@@ -735,7 +735,7 @@ class _StatBox extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         border: Border.all(color: theme.colorScheme.outline),
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: theme.brightness == Brightness.dark ? .35 : .12),
