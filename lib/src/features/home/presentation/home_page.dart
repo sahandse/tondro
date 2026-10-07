@@ -517,7 +517,9 @@ class _DownloadCard extends StatelessWidget {
     final isRunning = item.status == DownloadStatus.downloading;
     final isDone = item.status == DownloadStatus.completed;
     final failed = item.status == DownloadStatus.failed;
-    final progress = item.totalBytes > 0 ? item.progress.clamp(0, 1) : null;
+    final double? progress = item.totalBytes > 0
+        ? item.progress.clamp(0, 1).toDouble()
+        : null;
 
     return Material(
       color: theme.colorScheme.surface,
