@@ -73,6 +73,23 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
           ),
           const SizedBox(height: 14),
           _SectionCard(
+            title: 'ویجت',
+            children: [
+              ListTile(
+                leading: const Icon(Icons.widgets_outlined),
+                title: const Text('افزودن ویجت به صفحه اصلی'),
+                subtitle: const Text(
+                  'دانلود فعال، سرعت و کنترل Pause/Resume',
+                ),
+                trailing: const Icon(Icons.add_to_home_screen_rounded),
+                onTap: () async {
+                  await widget.controller.requestHomeWidget();
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _SectionCard(
             title: 'اتصال و صف',
             children: [
               SwitchListTile.adaptive(
