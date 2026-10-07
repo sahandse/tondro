@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/theme/theme_controller.dart';
 import '../../../app/widgets/tondro_brand.dart';
 import '../../downloads/presentation/downloads_controller.dart';
+import '../../site_profiles/presentation/site_profiles_page.dart';
 
 class DownloadSettingsPage extends StatefulWidget {
   const DownloadSettingsPage({
@@ -152,6 +153,30 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
                     if (mounted) setState(() {});
                   },
                 ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _SectionCard(
+            title: 'سایت‌ها',
+            children: [
+              ListTile(
+                leading: const Icon(Icons.language_rounded),
+                title: const Text('Site Profiles'),
+                subtitle: Text(
+                  '${widget.controller.siteProfiles.length} پروفایل ذخیره‌شده',
+                ),
+                trailing: const Icon(Icons.chevron_left_rounded),
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => SiteProfilesPage(
+                        controller: widget.controller,
+                      ),
+                    ),
+                  );
+                  if (mounted) setState(() {});
+                },
               ),
             ],
           ),
