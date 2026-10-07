@@ -12,90 +12,149 @@ class TondroLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final base = inverted ? !dark : dark;
-    final background = base ? Colors.white : Colors.black;
-    final foreground = base ? Colors.black : Colors.white;
-
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(size * .18),
-        border: Border.all(
-          color: foreground.withValues(alpha: .28),
-          width: 1.2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: dark ? .45 : .16),
-            offset: const Offset(2, 3),
-            blurRadius: 0,
-          ),
-        ],
-      ),
+    return SizedBox.square(
+      dimension: size,
       child: CustomPaint(
-        painter: _TondroLogoPainter(foreground),
+        painter: const _TondroRibbonPainter(),
       ),
     );
   }
 }
 
-class _TondroLogoPainter extends CustomPainter {
-  const _TondroLogoPainter(this.color);
-
-  final Color color;
+class _TondroRibbonPainter extends CustomPainter {
+  const _TondroRibbonPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = size.width * .09
-      ..strokeCap = StrokeCap.square
-      ..style = PaintingStyle.stroke;
+    final rect = Offset.zero & size;
+    const cyan = Color(0xFF56E9FF);
+    const blue = Color(0xFF1785FF);
+    const royal = Color(0xFF1746E8);
+    const deep = Color(0xFF092CA5);
 
-    final center = size.width / 2;
-    canvas.drawLine(
-      Offset(center, size.height * .18),
-      Offset(center, size.height * .66),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(size.width * .31, size.height * .48),
-      Offset(center, size.height * .68),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(size.width * .69, size.height * .48),
-      Offset(center, size.height * .68),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(size.width * .26, size.height * .78),
-      Offset(size.width * .74, size.height * .78),
-      paint,
-    );
+    final top = Path()
+      ..moveTo(size.width * .50, size.height * .08)
+      ..cubicTo(
+        size.width * .28,
+        size.height * .20,
+        size.width * .26,
+        size.height * .35,
+        size.width * .44,
+        size.height * .45,
+      )
+      ..cubicTo(
+        size.width * .61,
+        size.height * .55,
+        size.width * .73,
+        size.height * .51,
+        size.width * .76,
+        size.height * .41,
+      )
+      ..cubicTo(
+        size.width * .79,
+        size.height * .31,
+        size.width * .70,
+        size.height * .25,
+        size.width * .50,
+        size.height * .08,
+      )
+      ..close();
 
-    final bolt = Path()
-      ..moveTo(size.width * .62, size.height * .16)
-      ..lineTo(size.width * .48, size.height * .42)
-      ..lineTo(size.width * .60, size.height * .42)
-      ..lineTo(size.width * .48, size.height * .59);
+    final middle = Path()
+      ..moveTo(size.width * .34, size.height * .36)
+      ..cubicTo(
+        size.width * .41,
+        size.height * .48,
+        size.width * .66,
+        size.height * .50,
+        size.width * .70,
+        size.height * .62,
+      )
+      ..cubicTo(
+        size.width * .73,
+        size.height * .71,
+        size.width * .64,
+        size.height * .77,
+        size.width * .52,
+        size.height * .79,
+      )
+      ..cubicTo(
+        size.width * .64,
+        size.height * .68,
+        size.width * .55,
+        size.height * .61,
+        size.width * .39,
+        size.height * .55,
+      )
+      ..cubicTo(
+        size.width * .25,
+        size.height * .50,
+        size.width * .24,
+        size.height * .43,
+        size.width * .34,
+        size.height * .36,
+      )
+      ..close();
+
+    final arrow = Path()
+      ..moveTo(size.width * .22, size.height * .64)
+      ..lineTo(size.width * .45, size.height * .68)
+      ..lineTo(size.width * .45, size.height * .57)
+      ..lineTo(size.width * .52, size.height * .79)
+      ..lineTo(size.width * .84, size.height * .65)
+      ..lineTo(size.width * .72, size.height * .88)
+      ..quadraticBezierTo(
+        size.width * .52,
+        size.height * 1.02,
+        size.width * .31,
+        size.height * .86,
+      )
+      ..close();
+
     canvas.drawPath(
-      bolt,
+      top,
       Paint()
-        ..color = color
-        ..strokeWidth = size.width * .055
-        ..strokeCap = StrokeCap.square
-        ..strokeJoin = StrokeJoin.miter
-        ..style = PaintingStyle.stroke,
+        ..shader = const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [cyan, blue, royal],
+        ).createShader(rect),
     );
+
+    canvas.drawPath(
+      middle,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [cyan, royal, deep],
+        ).createShader(rect),
+    );
+
+    canvas.drawPath(
+      arrow,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [cyan, blue, royal],
+        ).createShader(rect),
+    );
+
+    final edgePaint = Paint()
+      ..color = Colors.white.withValues(alpha: .48)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = size.width * .018
+      ..strokeJoin = StrokeJoin.round
+      ..strokeCap = StrokeCap.round;
+    canvas
+      ..drawPath(top, edgePaint)
+      ..drawPath(middle, edgePaint)
+      ..drawPath(arrow, edgePaint);
   }
 
   @override
-  bool shouldRepaint(covariant _TondroLogoPainter oldDelegate) =>
-      oldDelegate.color != color;
+  bool shouldRepaint(covariant _TondroRibbonPainter oldDelegate) => false;
 }
 
 class XpWindowFrame extends StatelessWidget {
