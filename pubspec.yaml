@@ -18,6 +18,8 @@ dependencies:
   background_downloader: ^9.5.9
   receive_sharing_intent: 1.8.1
   webview_flutter: ^4.14.1
+  file_picker: ^13.1.0
+  home_widget: ^0.10.0
   path_provider: ^2.1.4
   permission_handler: ^11.3.1
   intl: ^0.20.3
