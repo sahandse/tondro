@@ -400,6 +400,33 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                 HapticFeedback.lightImpact();
                                 unawaited(_controller.start(items[index].id));
                               },
+                              onShare: () async {
+                                HapticFeedback.selectionClick();
+                                final shared =
+                                    await _controller.shareFile(items[index].id);
+                                if (!shared && context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('فایل قابل اشتراک‌گذاری نیست.'),
+                                    ),
+                                  );
+                                }
+                              },
+                              onChecksum: () async {
+                                HapticFeedback.selectionClick();
+                                final hash = await _controller
+                                    .calculateSha256(items[index].id);
+                                if (hash == null || !context.mounted) return;
+                                await Clipboard.setData(
+                                  ClipboardData(text: hash),
+                                );
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('SHA-256 کپی شد'),
+                                  ),
+                                );
+                              },
                               onDelete: () {
                                 HapticFeedback.mediumImpact();
                                 unawaited(_controller.remove(items[index].id));
@@ -519,6 +546,8 @@ class _DownloadCard extends StatelessWidget {
     required this.onOpen,
     required this.onPause,
     required this.onResume,
+    required this.onShare,
+    required this.onChecksum,
     required this.onDelete,
   });
 
@@ -526,6 +555,8 @@ class _DownloadCard extends StatelessWidget {
   final VoidCallback onOpen;
   final VoidCallback onPause;
   final VoidCallback onResume;
+  final VoidCallback onShare;
+  final VoidCallback onChecksum;
   final VoidCallback onDelete;
 
   @override
@@ -580,6 +611,8 @@ class _DownloadCard extends StatelessWidget {
                 PopupMenuButton<String>(
                   onSelected: (value) {
                     if (value == 'open') onOpen();
+                    if (value == 'share') onShare();
+                    if (value == 'checksum') onChecksum();
                     if (value == 'delete') onDelete();
                   },
                   itemBuilder: (_) => [
@@ -587,6 +620,16 @@ class _DownloadCard extends StatelessWidget {
                       const PopupMenuItem(
                         value: 'open',
                         child: Text('باز کردن'),
+                      ),
+                    if (isDone)
+                      const PopupMenuItem(
+                        value: 'share',
+                        child: Text('اشتراک‌گذاری'),
+                      ),
+                    if (isDone)
+                      const PopupMenuItem(
+                        value: 'checksum',
+                        child: Text('SHA-256'),
                       ),
                     const PopupMenuItem(
                       value: 'delete',
