@@ -27,7 +27,7 @@ class ThrottledDownloadService {
     IOSink? sink;
     try {
       final request = await client.getUrl(Uri.parse(item.url));
-      headers.forEach(request.headers.set);
+      headers.forEach((name, value) => request.headers.set(name, value));
       if (existingBytes > 0) {
         request.headers.set(HttpHeaders.rangeHeader, 'bytes=$existingBytes-');
       }
