@@ -6,6 +6,7 @@ class DownloadSettings {
     this.clipboardDetection = true,
     this.notifications = true,
     this.speedLimitKbps = 0,
+    this.maxSegments = 4,
   });
 
   final int maxConcurrentDownloads;
@@ -14,6 +15,7 @@ class DownloadSettings {
   final bool clipboardDetection;
   final bool notifications;
   final int speedLimitKbps;
+  final int maxSegments;
 
   DownloadSettings copyWith({
     int? maxConcurrentDownloads,
@@ -22,6 +24,7 @@ class DownloadSettings {
     bool? clipboardDetection,
     bool? notifications,
     int? speedLimitKbps,
+    int? maxSegments,
   }) {
     return DownloadSettings(
       maxConcurrentDownloads:
@@ -31,6 +34,7 @@ class DownloadSettings {
       clipboardDetection: clipboardDetection ?? this.clipboardDetection,
       notifications: notifications ?? this.notifications,
       speedLimitKbps: speedLimitKbps ?? this.speedLimitKbps,
+      maxSegments: maxSegments ?? this.maxSegments,
     );
   }
 }
