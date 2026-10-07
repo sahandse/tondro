@@ -150,6 +150,7 @@ class AppBackupService {
         'notifications': value.notifications,
         'speedLimitKbps': value.speedLimitKbps,
         'maxSegments': value.maxSegments,
+        'smartSegments': value.smartSegments,
       };
 
   DownloadSettings _settingsFromMap(Map<String, dynamic> map) =>
@@ -162,5 +163,6 @@ class AppBackupService {
         notifications: map['notifications'] as bool? ?? true,
         speedLimitKbps: (map['speedLimitKbps'] as num?)?.toInt() ?? 0,
         maxSegments: (map['maxSegments'] as num?)?.toInt() ?? 4,
+        smartSegments: map['smartSegments'] as bool? ?? true,
       );
 }
