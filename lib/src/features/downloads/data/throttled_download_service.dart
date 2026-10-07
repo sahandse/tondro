@@ -14,6 +14,7 @@ class ThrottledDownloadService {
   Future<void> download({
     required DownloadItem item,
     required int speedLimitKbps,
+    Map<String, String> headers = const {},
     required void Function(int received, int total, double speedBytesPerSecond)
         onProgress,
   }) async {
@@ -26,6 +27,7 @@ class ThrottledDownloadService {
     IOSink? sink;
     try {
       final request = await client.getUrl(Uri.parse(item.url));
+      headers.forEach(request.headers.set);
       if (existingBytes > 0) {
         request.headers.set(HttpHeaders.rangeHeader, 'bytes=$existingBytes-');
       }
