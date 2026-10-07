@@ -12,9 +12,11 @@ class BrowserPage extends StatefulWidget {
   const BrowserPage({
     super.key,
     required this.downloadsController,
+    this.initialUrl,
   });
 
   final DownloadsController downloadsController;
+  final String? initialUrl;
 
   @override
   State<BrowserPage> createState() => _BrowserPageState();
@@ -29,7 +31,7 @@ class _BrowserPageState extends State<BrowserPage> {
   @override
   void initState() {
     super.initState();
-    _address = TextEditingController();
+    _address = TextEditingController(text: widget.initialUrl ?? '');
     _web = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
@@ -56,13 +58,23 @@ class _BrowserPageState extends State<BrowserPage> {
             return NavigationDecision.navigate;
           },
         ),
-      )
-      ..loadHtmlString(
-        '<html><body style="font-family:sans-serif;padding:32px">'
-        '<h3>Tondro Browser</h3>'
-        '<p>آدرس سایت را در نوار بالا وارد کن.</p>'
-        '</body></html>',
       );
+    final initialUrl = widget.initialUrl;
+    if (initialUrl != null && initialUrl.isNotEmpty) {
+      final uri = Uri.tryParse(initialUrl);
+      if (uri != null) {
+        unawaited(_web.loadRequest(uri));
+      }
+    } else {
+      unawaited(
+        _web.loadHtmlString(
+          '<html><body style="font-family:sans-serif;padding:32px">'
+          '<h3>Tondro Browser</h3>'
+          '<p>آدرس سایت را در نوار بالا وارد کن.</p>'
+          '</body></html>',
+        ),
+      );
+    }
   }
 
   @override
