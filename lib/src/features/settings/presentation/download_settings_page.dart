@@ -32,7 +32,7 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
           children: [
             TondroLogo(size: 34),
             SizedBox(width: 10),
-            Text('Control Panel'),
+            Text('تنظیمات'),
           ],
         ),
       ),
@@ -236,7 +236,7 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
           ),
           const SizedBox(height: 14),
           _SectionCard(
-            title: 'سایت‌ها',
+            title: 'پروفایل سایت‌ها',
             children: [
               ListTile(
                 leading: const Icon(Icons.language_rounded),
@@ -260,7 +260,7 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
           ),
           const SizedBox(height: 14),
           _SectionCard(
-            title: 'تشخیص لینک',
+            title: 'لینک و اعلان‌ها',
             children: [
               SwitchListTile.adaptive(
                 value: settings.clipboardDetection,
@@ -289,7 +289,7 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
           ),
           const SizedBox(height: 14),
           _SectionCard(
-            title: 'Torrent',
+            title: 'دانلود پیشرفته',
             children: [
               ListTile(
                 leading: const Icon(Icons.hub_outlined),
@@ -308,7 +308,7 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
           ),
           const SizedBox(height: 14),
           _SectionCard(
-            title: 'بعد از تکمیل',
+            title: 'بعد از دانلود',
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
@@ -339,7 +339,7 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
           ),
           const SizedBox(height: 14),
           _SectionCard(
-            title: 'پشتیبان‌گیری',
+            title: 'بکاپ و بازیابی',
             children: [
               ListTile(
                 leading: const Icon(Icons.backup_outlined),
