@@ -46,7 +46,7 @@ class _SiteProfilesPageState extends State<SiteProfilesPage> {
             ),
             child: SingleChildScrollView(
               child: XpWindowFrame(
-                title: profile == null ? 'New Site Profile' : 'Edit Site Profile',
+                title: profile == null ? 'پروفایل جدید' : 'ویرایش پروفایل',
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -70,7 +70,7 @@ class _SiteProfilesPageState extends State<SiteProfilesPage> {
                     DropdownButtonFormField<int>(
                       initialValue: segments,
                       decoration: const InputDecoration(
-                        labelText: 'تعداد Segment',
+                        labelText: 'تعداد اتصال',
                       ),
                       items: const [1, 2, 4, 8, 16]
                           .map(
@@ -202,7 +202,7 @@ class _SiteProfilesPageState extends State<SiteProfilesPage> {
           children: [
             TondroLogo(size: 32),
             SizedBox(width: 10),
-            Text('Site Profiles'),
+            Text('پروفایل سایت‌ها'),
           ],
         ),
       ),
