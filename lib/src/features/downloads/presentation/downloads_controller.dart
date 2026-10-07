@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:background_downloader/background_downloader.dart';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -11,11 +12,14 @@ import '../../site_profiles/domain/site_profile.dart';
 import '../../widget/data/tondro_widget_service.dart';
 import '../../settings/domain/download_settings.dart';
 import '../data/background_download_service.dart';
+import '../data/download_inspection_service.dart';
 import '../data/download_store.dart';
 import '../data/segmented_download_service.dart';
 import '../data/throttled_download_service.dart';
 import '../domain/download_category.dart';
+import '../domain/download_inspection.dart';
 import '../domain/download_item.dart';
+import '../domain/duplicate_policy.dart';
 
 class DownloadsController extends ChangeNotifier {
   DownloadsController({
@@ -25,12 +29,14 @@ class DownloadsController extends ChangeNotifier {
     ThrottledDownloadService? throttledService,
     SegmentedDownloadService? segmentedService,
     SiteProfileStore? siteProfileStore,
+    DownloadInspectionService? inspectionService,
   })  : _store = store ?? DownloadStore(),
         _settingsStore = settingsStore ?? SettingsStore(),
         _service = service ?? BackgroundDownloadService(),
         _throttledService = throttledService ?? ThrottledDownloadService(),
         _segmentedService = segmentedService ?? SegmentedDownloadService(),
-        _siteProfileStore = siteProfileStore ?? SiteProfileStore();
+        _siteProfileStore = siteProfileStore ?? SiteProfileStore(),
+        _inspectionService = inspectionService ?? DownloadInspectionService();
 
   final DownloadStore _store;
   final SettingsStore _settingsStore;
@@ -38,6 +44,7 @@ class DownloadsController extends ChangeNotifier {
   final ThrottledDownloadService _throttledService;
   final SegmentedDownloadService _segmentedService;
   final SiteProfileStore _siteProfileStore;
+  final DownloadInspectionService _inspectionService;
   final List<DownloadItem> _items = [];
   final List<SiteProfile> _siteProfiles = [];
   final Set<String> _throttledActive = {};
@@ -101,9 +108,27 @@ class DownloadsController extends ChangeNotifier {
     await _enqueueReadyItems();
   }
 
+  Future<DownloadInspection> inspectUrl(String rawUrl) async {
+    final uri = Uri.tryParse(rawUrl.trim());
+    if (uri == null ||
+        !uri.hasScheme ||
+        !{'http', 'https'}.contains(uri.scheme)) {
+      throw const FormatException('لینک دانلود معتبر نیست.');
+    }
+    final profile = _profileForUrl(uri.toString());
+    return _inspectionService.inspect(
+      uri.toString(),
+      headers: profile?.requestHeaders ?? const <String, String>{},
+    );
+  }
+
   Future<void> addUrl(
     String rawUrl, {
     DateTime? scheduledAt,
+    String? customFolder,
+    DuplicatePolicy duplicatePolicy = DuplicatePolicy.rename,
+    String? expectedSha256,
+    DownloadInspection? inspection,
   }) async {
     final uri = Uri.tryParse(rawUrl.trim());
     if (uri == null ||
@@ -112,35 +137,87 @@ class DownloadsController extends ChangeNotifier {
       throw const FormatException('لینک دانلود معتبر نیست.');
     }
 
+    DownloadInspection? resolvedInspection = inspection;
+    if (resolvedInspection == null) {
+      try {
+        resolvedInspection = await inspectUrl(uri.toString());
+      } catch (_) {}
+    }
+
     final directory = await getApplicationDocumentsDirectory();
     final fallbackName = 'download-${DateTime.now().millisecondsSinceEpoch}';
-    final rawFileName =
+    final urlFileName =
         uri.pathSegments.isNotEmpty && uri.pathSegments.last.isNotEmpty
             ? Uri.decodeComponent(uri.pathSegments.last)
             : fallbackName;
+    final rawFileName = resolvedInspection?.fileName.trim().isNotEmpty == true
+        ? resolvedInspection!.fileName
+        : urlFileName;
     final safeFileName = _sanitizeFileName(rawFileName, fallbackName);
     final category = detectDownloadCategory(safeFileName);
     final profile = _profileForUrl(uri.toString());
+    final requestedFolder = customFolder?.trim();
     final profileFolder = profile?.folderName?.trim();
-    final relativeDirectory = profileFolder != null && profileFolder.isNotEmpty
-        ? 'downloads/${_sanitizeFolderName(profileFolder)}'
+    final effectiveFolder = requestedFolder != null && requestedFolder.isNotEmpty
+        ? requestedFolder
+        : profileFolder;
+    final relativeDirectory = effectiveFolder != null && effectiveFolder.isNotEmpty
+        ? 'downloads/${_sanitizeFolderName(effectiveFolder)}'
         : 'downloads/${categoryFolderName(category)}';
-    final downloadsDir = Directory(
-      '${directory.path}/$relativeDirectory',
-    );
+    final downloadsDir = Directory('${directory.path}/$relativeDirectory');
     if (!await downloadsDir.exists()) {
       await downloadsDir.create(recursive: true);
     }
-    final fileName = await _uniqueFileName(downloadsDir, safeFileName);
+
+    var fileName = safeFileName;
+    var savePath = '${downloadsDir.path}/$fileName';
+    final existingFile = File(savePath);
+    final duplicateInHistory = _items.any((item) => item.savePath == savePath);
+    final duplicateExists = await existingFile.exists() || duplicateInHistory;
+
+    if (duplicateExists) {
+      switch (duplicatePolicy) {
+        case DuplicatePolicy.rename:
+          fileName = await _uniqueFileName(downloadsDir, safeFileName);
+          savePath = '${downloadsDir.path}/$fileName';
+        case DuplicatePolicy.overwrite:
+          if (await existingFile.exists()) await existingFile.delete();
+          await _deleteSegmentParts(savePath);
+          _items.removeWhere((item) => item.savePath == savePath);
+        case DuplicatePolicy.skip:
+          throw const FormatException('این فایل از قبل وجود دارد.');
+        case DuplicatePolicy.resume:
+          break;
+      }
+    }
+
+    final existingBytes =
+        duplicatePolicy == DuplicatePolicy.resume && await File(savePath).exists()
+            ? await File(savePath).length()
+            : 0;
+    final normalizedExpected = expectedSha256?.trim().toLowerCase();
+    if (normalizedExpected != null &&
+        normalizedExpected.isNotEmpty &&
+        !RegExp(r'^[a-f0-9]{64}$').hasMatch(normalizedExpected)) {
+      throw const FormatException('SHA-256 باید ۶۴ کاراکتر هگز باشد.');
+    }
 
     final id = DateTime.now().microsecondsSinceEpoch.toString();
     final item = DownloadItem(
       id: id,
       url: uri.toString(),
       fileName: fileName,
-      savePath: '${downloadsDir.path}/$fileName',
+      savePath: savePath,
       createdAt: DateTime.now(),
       relativeDirectory: relativeDirectory,
+      mimeType: resolvedInspection?.mimeType,
+      supportsRange: resolvedInspection?.supportsRange ?? false,
+      expectedSha256:
+          normalizedExpected == null || normalizedExpected.isEmpty
+              ? null
+              : normalizedExpected,
+      receivedBytes: existingBytes,
+      totalBytes: resolvedInspection?.totalBytes ?? 0,
       scheduledAt: scheduledAt,
       status: DownloadStatus.queued,
     );
@@ -154,7 +231,6 @@ class DownloadsController extends ChangeNotifier {
       await _enqueue(item);
     }
   }
-
   String _sanitizeFileName(String value, String fallback) {
     final sanitized = value
         .replaceAll(RegExp(r'[\\/:*?"<>|]'), '_')
