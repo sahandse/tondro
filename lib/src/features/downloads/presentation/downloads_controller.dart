@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../settings/data/settings_store.dart';
+import '../../site_profiles/data/site_profile_store.dart';
+import '../../site_profiles/domain/site_profile.dart';
 import '../../settings/domain/download_settings.dart';
 import '../data/background_download_service.dart';
 import '../data/download_store.dart';
@@ -21,18 +23,22 @@ class DownloadsController extends ChangeNotifier {
     BackgroundDownloadService? service,
     ThrottledDownloadService? throttledService,
     SegmentedDownloadService? segmentedService,
+    SiteProfileStore? siteProfileStore,
   })  : _store = store ?? DownloadStore(),
         _settingsStore = settingsStore ?? SettingsStore(),
         _service = service ?? BackgroundDownloadService(),
         _throttledService = throttledService ?? ThrottledDownloadService(),
-        _segmentedService = segmentedService ?? SegmentedDownloadService();
+        _segmentedService = segmentedService ?? SegmentedDownloadService(),
+        _siteProfileStore = siteProfileStore ?? SiteProfileStore();
 
   final DownloadStore _store;
   final SettingsStore _settingsStore;
   final BackgroundDownloadService _service;
   final ThrottledDownloadService _throttledService;
   final SegmentedDownloadService _segmentedService;
+  final SiteProfileStore _siteProfileStore;
   final List<DownloadItem> _items = [];
+  final List<SiteProfile> _siteProfiles = [];
   final Set<String> _throttledActive = {};
   final Set<String> _segmentedActive = {};
 
@@ -43,9 +49,13 @@ class DownloadsController extends ChangeNotifier {
   bool get loading => _loading;
   List<DownloadItem> get items => List.unmodifiable(_items);
   DownloadSettings get settings => _settings;
+  List<SiteProfile> get siteProfiles => List.unmodifiable(_siteProfiles);
 
   Future<void> init() async {
     _settings = await _settingsStore.load();
+    _siteProfiles
+      ..clear()
+      ..addAll(await _siteProfileStore.load());
 
     final stored = await _store.load();
     _items
@@ -106,8 +116,13 @@ class DownloadsController extends ChangeNotifier {
             : fallbackName;
     final safeFileName = _sanitizeFileName(rawFileName, fallbackName);
     final category = detectDownloadCategory(safeFileName);
+    final profile = _profileForUrl(uri.toString());
+    final profileFolder = profile?.folderName?.trim();
+    final relativeDirectory = profileFolder != null && profileFolder.isNotEmpty
+        ? 'downloads/${_sanitizeFolderName(profileFolder)}'
+        : 'downloads/${categoryFolderName(category)}';
     final downloadsDir = Directory(
-      '${directory.path}/downloads/${categoryFolderName(category)}',
+      '${directory.path}/$relativeDirectory',
     );
     if (!await downloadsDir.exists()) {
       await downloadsDir.create(recursive: true);
@@ -121,6 +136,7 @@ class DownloadsController extends ChangeNotifier {
       fileName: fileName,
       savePath: '${downloadsDir.path}/$fileName',
       createdAt: DateTime.now(),
+      relativeDirectory: relativeDirectory,
       scheduledAt: scheduledAt,
       status: DownloadStatus.queued,
     );
@@ -142,6 +158,46 @@ class DownloadsController extends ChangeNotifier {
       return fallback;
     }
     return sanitized;
+  }
+
+
+  String _sanitizeFolderName(String value) {
+    final sanitized = value.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_').trim();
+    return sanitized.isEmpty ? 'Other' : sanitized;
+  }
+
+  SiteProfile? _profileForUrl(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null || uri.host.isEmpty) return null;
+    for (final profile in _siteProfiles) {
+      if (profile.matchesHost(uri.host)) return profile;
+    }
+    return null;
+  }
+
+  Map<String, String> _headersFor(DownloadItem item) =>
+      _profileForUrl(item.url)?.requestHeaders ?? const <String, String>{};
+
+  int _segmentsFor(DownloadItem item) {
+    final profileSegments = _profileForUrl(item.url)?.maxSegments;
+    return (profileSegments ?? _settings.maxSegments).clamp(1, 16);
+  }
+
+  Future<void> saveSiteProfile(SiteProfile profile) async {
+    final index = _siteProfiles.indexWhere((item) => item.id == profile.id);
+    if (index >= 0) {
+      _siteProfiles[index] = profile;
+    } else {
+      _siteProfiles.add(profile);
+    }
+    await _siteProfileStore.save(_siteProfiles);
+    notifyListeners();
+  }
+
+  Future<void> deleteSiteProfile(String id) async {
+    _siteProfiles.removeWhere((profile) => profile.id == id);
+    await _siteProfileStore.save(_siteProfiles);
+    notifyListeners();
   }
 
   Future<String> _uniqueFileName(Directory directory, String original) async {
@@ -201,7 +257,7 @@ class DownloadsController extends ChangeNotifier {
       _pumpThrottledQueue();
       return;
     }
-    if (_settings.maxSegments > 1) {
+    if (_segmentsFor(item) > 1) {
       _pumpSegmentedQueue();
       return;
     }
@@ -209,11 +265,12 @@ class DownloadsController extends ChangeNotifier {
       item,
       wifiOnly: _settings.wifiOnly,
       retries: _settings.autoRetry,
+      headers: _headersFor(item),
     );
   }
 
   void _pumpSegmentedQueue() {
-    if (_settings.speedLimitKbps > 0 || _settings.maxSegments <= 1) return;
+    if (_settings.speedLimitKbps > 0) return;
     if (_settings.wifiOnly && !_service.isWiFi) return;
 
     final available =
@@ -223,6 +280,7 @@ class DownloadsController extends ChangeNotifier {
     final now = DateTime.now();
     final ready = _items.where((item) {
       if (item.status != DownloadStatus.queued) return false;
+      if (_segmentsFor(item) <= 1) return false;
       if (_segmentedActive.contains(item.id)) return false;
       return item.scheduledAt == null || !item.scheduledAt!.isAfter(now);
     }).take(available).toList();
@@ -250,7 +308,8 @@ class DownloadsController extends ChangeNotifier {
     try {
       final completed = await _segmentedService.download(
         item: _items[index],
-        segments: _settings.maxSegments,
+        segments: _segmentsFor(_items[index]),
+        headers: _headersFor(_items[index]),
         onProgress: (received, total, speed) {
           final liveIndex = _items.indexWhere((item) => item.id == id);
           if (liveIndex < 0) return;
@@ -309,6 +368,7 @@ class DownloadsController extends ChangeNotifier {
           _items[currentIndex],
           wifiOnly: _settings.wifiOnly,
           retries: _settings.autoRetry,
+          headers: _headersFor(_items[currentIndex]),
         );
       } else {
         _pumpSegmentedQueue();
@@ -353,6 +413,7 @@ class DownloadsController extends ChangeNotifier {
       await _throttledService.download(
         item: _items[index],
         speedLimitKbps: _settings.speedLimitKbps,
+        headers: _headersFor(_items[index]),
         onProgress: (received, total, speed) {
           final liveIndex = _items.indexWhere((item) => item.id == id);
           if (liveIndex < 0) return;
@@ -520,7 +581,7 @@ class DownloadsController extends ChangeNotifier {
       _pumpThrottledQueue();
       return;
     }
-    if (_settings.maxSegments > 1) {
+    if (_segmentsFor(_items[index]) > 1) {
       _pumpSegmentedQueue();
       return;
     }
