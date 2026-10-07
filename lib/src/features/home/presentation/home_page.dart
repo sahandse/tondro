@@ -157,7 +157,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (_) => NewDownloadSheet(initialUrl: initialUrl),
+      builder: (_) => NewDownloadSheet(
+        controller: _controller,
+        initialUrl: initialUrl,
+      ),
     );
 
     if (request == null || request.url.isEmpty) return;
@@ -165,6 +168,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       await _controller.addUrl(
         request.url,
         scheduledAt: request.scheduledAt,
+        customFolder: request.customFolder,
+        duplicatePolicy: request.duplicatePolicy,
+        expectedSha256: request.expectedSha256,
+        inspection: request.inspection,
       );
     } on FormatException catch (error) {
       if (!mounted) return;
