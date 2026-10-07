@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/theme_controller.dart';
+import '../../backup/data/app_backup_service.dart';
 import '../../../app/widgets/tondro_brand.dart';
 import '../../downloads/presentation/downloads_controller.dart';
 import '../../site_profiles/presentation/site_profiles_page.dart';
@@ -205,6 +206,54 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
                     settings.copyWith(notifications: value),
                   );
                   if (mounted) setState(() {});
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _SectionCard(
+            title: 'پشتیبان‌گیری',
+            children: [
+              ListTile(
+                leading: const Icon(Icons.backup_outlined),
+                title: const Text('خروجی بکاپ'),
+                subtitle: const Text(
+                  'تنظیمات، Site Profiles و تاریخچه دانلودها',
+                ),
+                onTap: () async {
+                  final uri = await AppBackupService().exportBackup();
+                  if (!context.mounted || uri == null) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('بکاپ ذخیره شد')),
+                  );
+                },
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.restore_rounded),
+                title: const Text('بازیابی بکاپ'),
+                subtitle: const Text('بازیابی فایل JSON تندرو'),
+                onTap: () async {
+                  try {
+                    final result = await AppBackupService().importBackup();
+                    if (result == null) return;
+                    await widget.controller.reloadFromStores();
+                    if (!context.mounted) return;
+                    setState(() {});
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          '${result.downloads} دانلود و '
+                          '${result.profiles} پروفایل بازیابی شد',
+                        ),
+                      ),
+                    );
+                  } on FormatException catch (error) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(error.message)),
+                    );
+                  }
                 },
               ),
             ],
