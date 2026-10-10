@@ -51,7 +51,7 @@ class BackgroundDownloadService {
     const permissionType = PermissionType.notifications;
     var status = await _downloader.permissions.status(permissionType);
     if (status == PermissionStatus.granted) return;
-    status = await _downloader.permissions.request(permissionType);
+    await _downloader.permissions.request(permissionType);
   }
 
   Future<void> updateRuntimeSettings({
@@ -74,6 +74,7 @@ class BackgroundDownloadService {
     final category = detectDownloadCategory(item.fileName);
     final directory = item.relativeDirectory ??
         'downloads/${categoryFolderName(category)}';
+
     return DownloadTask(
       taskId: item.id,
       url: item.url,
@@ -125,55 +126,29 @@ class BackgroundDownloadService {
   Future<String?> moveToTondroSharedStorage(
     DownloadItem item,
   ) async {
-    var permission =
-        await _downloader.permissions.status(PermissionType.androidSharedStorage);
+    var permission = await _downloader.permissions.status(
+      PermissionType.androidSharedStorage,
+    );
+
     if (permission != PermissionStatus.granted) {
       permission = await _downloader.permissions.request(
         PermissionType.androidSharedStorage,
       );
     }
+
     if (permission != PermissionStatus.granted) {
       return null;
     }
+
     final category = detectDownloadCategory(item.fileName);
     var folder = item.relativeDirectory ?? categoryFolderName(category);
     folder = folder
-        .replaceFirst(RegExp(r'^downloads/?', caseSensitive: false), '')
-        .replaceAll(RegExp(r'^/+|/+
-    return _downloader.openFile(filePath: filePath);
-  }
+        .replaceFirst(
+          RegExp(r'^downloads/?', caseSensitive: false),
+          '',
+        )
+        .replaceAll(RegExp(r'^/+|/+$'), '');
 
-  Future<void> configureNotifications(
-    bool enabled, {
-    bool showComplete = true,
-  }) async {
-    if (enabled) {
-      _downloader.configureNotification(
-        running: const TaskNotification('تندرو', 'در حال دانلود {filename}'),
-        complete: showComplete
-            ? const TaskNotification('دانلود کامل شد', '{filename}')
-            : null,
-        error: const TaskNotification('دانلود ناموفق بود', '{filename}'),
-        paused: const TaskNotification('دانلود متوقف شد', '{filename}'),
-        progressBar: true,
-        tapOpensFile: true,
-      );
-    } else {
-      _downloader.configureNotification(
-        running: null,
-        complete: null,
-        error: null,
-        paused: null,
-      );
-    }
-  }
-
-  Future<void> dispose() async {
-    await _updatesSub?.cancel();
-    _updatesSub = null;
-  }
-}
-), '');
     if (folder.isEmpty) {
       folder = categoryFolderName(category);
     }
