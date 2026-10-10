@@ -113,7 +113,7 @@ class _BrowserPageState extends State<BrowserPage> {
           }
         },
         onWebResourceError: (error) {
-          if (!error.isForMainFrame) return;
+          if (error.isForMainFrame != true) return;
           tab.errorMessage = _browserErrorMessage(error);
           if (mounted && _active.id == tab.id) setState(() {});
         },
@@ -176,9 +176,33 @@ class _BrowserPageState extends State<BrowserPage> {
       return parsed;
     }
 
-    final looksLikeHost = RegExp(
-      r'^(?:localhost|(?:\d{1,3}\.){3}\d{1,3}|(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,})(?::\d+)?(?:/.*)?
+    final hostCandidate = Uri.tryParse('https://$value');
+    final host = hostCandidate?.host.toLowerCase() ?? '';
+    final looksLikeHost = host.isNotEmpty &&
+        (host == 'localhost' || host.contains('.'));
 
+    if (looksLikeHost && hostCandidate != null) {
+      return hostCandidate;
+    }
+
+    return Uri.https('www.google.com', '/search', {'q': value});
+  }
+
+  String _browserErrorMessage(WebResourceError error) {
+    final description = error.description.trim();
+    if (description.isEmpty) return 'صفحه باز نشد.';
+    final normalized = description.toLowerCase();
+    if (normalized.contains('err_name_not_resolved')) {
+      return 'آدرس پیدا نشد. اینترنت یا آدرس سایت را بررسی کن.';
+    }
+    if (normalized.contains('cleartext')) {
+      return 'این سایت فقط با HTTP باز می‌شود.';
+    }
+    if (normalized.contains('ssl')) {
+      return 'اتصال امن سایت مشکل دارد.';
+    }
+    return 'صفحه باز نشد: $description';
+  }
   Future<void> _capture(_BrowserTab tab, String url) async {
     if (!tab.detected.add(url) || !mounted) return;
     if (_active.id == tab.id) setState(() {});
