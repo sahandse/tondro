@@ -27,19 +27,15 @@ class _BrowserTab {
     required this.id,
     required this.controller,
     required this.incognito,
-    this.url = '',
-    this.title = 'تب جدید',
-    this.progress = 0,
-    this.desktopMode = false,
   });
 
   final String id;
   final WebViewController controller;
   final bool incognito;
-  String url;
-  String title;
-  int progress;
-  bool desktopMode;
+  String url = '';
+  String title = 'تب جدید';
+  int progress = 0;
+  bool desktopMode = false;
   final Set<String> detected = <String>{};
 }
 
