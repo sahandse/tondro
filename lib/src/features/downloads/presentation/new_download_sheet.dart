@@ -12,6 +12,8 @@ class NewDownloadRequest {
     required this.customFolder,
     required this.duplicatePolicy,
     required this.expectedSha256,
+    required this.segmentOverride,
+    required this.speedLimitKbpsOverride,
     required this.inspection,
   });
 
@@ -20,6 +22,8 @@ class NewDownloadRequest {
   final String? customFolder;
   final DuplicatePolicy duplicatePolicy;
   final String? expectedSha256;
+  final int? segmentOverride;
+  final int? speedLimitKbpsOverride;
   final DownloadInspection? inspection;
 }
 
@@ -44,6 +48,8 @@ class _NewDownloadSheetState extends State<NewDownloadSheet> {
   DateTime? _scheduledAt;
   DownloadInspection? _inspection;
   DuplicatePolicy _duplicatePolicy = DuplicatePolicy.rename;
+  int? _segmentOverride;
+  int _speedLimitKbpsOverride = 0;
   bool _inspecting = false;
   String? _inspectionError;
 
@@ -278,6 +284,69 @@ class _NewDownloadSheetState extends State<NewDownloadSheet> {
                   prefixIcon: Icon(Icons.verified_user_outlined),
                 ),
               ),
+              const SizedBox(height: 10),
+              ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                childrenPadding: EdgeInsets.zero,
+                title: const Text('تنظیمات پیشرفته'),
+                subtitle: const Text('اتصال و سقف سرعت همین فایل'),
+                children: [
+                  DropdownButtonFormField<int?>(
+                    initialValue: _segmentOverride,
+                    decoration: const InputDecoration(
+                      labelText: 'تعداد اتصال',
+                    ),
+                    items: const [
+                      DropdownMenuItem<int?>(
+                        value: null,
+                        child: Text('Auto'),
+                      ),
+                      DropdownMenuItem<int?>(value: 1, child: Text('1')),
+                      DropdownMenuItem<int?>(value: 2, child: Text('2')),
+                      DropdownMenuItem<int?>(value: 4, child: Text('4')),
+                      DropdownMenuItem<int?>(value: 8, child: Text('8')),
+                      DropdownMenuItem<int?>(value: 16, child: Text('16')),
+                    ],
+                    onChanged: (value) {
+                      setState(() => _segmentOverride = value);
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<int>(
+                    initialValue: _speedLimitKbpsOverride,
+                    decoration: const InputDecoration(
+                      labelText: 'سقف سرعت',
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 0,
+                        child: Text('تنظیم عمومی'),
+                      ),
+                      DropdownMenuItem(
+                        value: 512,
+                        child: Text('512 KB/s'),
+                      ),
+                      DropdownMenuItem(
+                        value: 1024,
+                        child: Text('1 MB/s'),
+                      ),
+                      DropdownMenuItem(
+                        value: 2048,
+                        child: Text('2 MB/s'),
+                      ),
+                      DropdownMenuItem(
+                        value: 4096,
+                        child: Text('4 MB/s'),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => _speedLimitKbpsOverride = value);
+                      }
+                    },
+                  ),
+                ],
+              ),
               const SizedBox(height: 12),
               OutlinedButton.icon(
                 onPressed: _pickSchedule,
@@ -308,6 +377,11 @@ class _NewDownloadSheetState extends State<NewDownloadSheet> {
                     expectedSha256: _sha256.text.trim().isEmpty
                         ? null
                         : _sha256.text.trim(),
+                    segmentOverride: _segmentOverride,
+                    speedLimitKbpsOverride:
+                        _speedLimitKbpsOverride == 0
+                            ? null
+                            : _speedLimitKbpsOverride,
                     inspection: inspection,
                   ),
                 ),
