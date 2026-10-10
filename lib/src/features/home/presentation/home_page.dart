@@ -10,6 +10,7 @@ import '../../downloads/domain/download_category.dart';
 import '../../downloads/domain/download_item.dart';
 import '../../downloads/presentation/downloads_controller.dart';
 import '../../downloads/presentation/new_download_sheet.dart';
+import '../../files/presentation/file_library_page.dart';
 import '../../settings/presentation/download_settings_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -24,8 +25,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   StreamSubscription<List<SharedMediaFile>>? _shareSub;
   StreamSubscription<Uri?>? _widgetClickSub;
   String? _lastClipboardUrl;
-  String _filter = 'all';
-  String _sort = 'newest';
 
   @override
   void initState() {
@@ -178,26 +177,22 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
   List<DownloadItem> _visibleItems(List<DownloadItem> source) {
-    final list = source.where((item) {
-      return switch (_filter) {
-        'active' => item.status == DownloadStatus.downloading || item.status == DownloadStatus.queued,
-        'completed' => item.status == DownloadStatus.completed,
-        _ => true,
-      };
-    }).toList();
-
-    switch (_sort) {
-      case 'oldest':
-        list.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-      case 'name':
-        list.sort((a, b) => a.fileName.toLowerCase().compareTo(b.fileName.toLowerCase()));
-      case 'size':
-        list.sort((a, b) => b.totalBytes.compareTo(a.totalBytes));
-      default:
-        list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    }
+    final list = source.toList();
+    int priority(DownloadStatus status) => switch (status) {
+          DownloadStatus.downloading => 0,
+          DownloadStatus.queued => 1,
+          DownloadStatus.paused => 2,
+          DownloadStatus.failed => 3,
+          DownloadStatus.completed => 4,
+        };
+    list.sort((a, b) {
+      final statusOrder = priority(a.status).compareTo(priority(b.status));
+      if (statusOrder != 0) return statusOrder;
+      return b.createdAt.compareTo(a.createdAt);
+    });
     return list;
   }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -221,6 +216,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           style: TextStyle(fontWeight: FontWeight.w900),
         ),
         actions: [
+          IconButton(
+            tooltip: 'فایل‌ها',
+            onPressed: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => FileLibraryPage(controller: _controller),
+                ),
+              );
+              if (mounted) setState(() {});
+            },
+            icon: const Icon(Icons.folder_open_rounded),
+          ),
           PopupMenuButton<String>(
             tooltip: 'بیشتر',
             onSelected: (value) async {
@@ -311,61 +318,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                  PopupMenuButton<String>(
-                    tooltip: 'مرتب‌سازی',
-                    initialValue: _sort,
-                    onSelected: (value) => setState(() => _sort = value),
-                    icon: const Icon(Icons.sort_rounded, size: 21),
-                    itemBuilder: (_) => const [
-                      PopupMenuItem(
-                        value: 'newest',
-                        child: Text('جدیدترین'),
-                      ),
-                      PopupMenuItem(
-                        value: 'oldest',
-                        child: Text('قدیمی‌ترین'),
-                      ),
-                      PopupMenuItem(
-                        value: 'name',
-                        child: Text('نام فایل'),
-                      ),
-                      PopupMenuItem(
-                        value: 'size',
-                        child: Text('حجم فایل'),
-                      ),
-                    ],
-                  ),
+
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(
-                    value: 'all',
-                    label: Text('همه'),
-                  ),
-                  ButtonSegment(
-                    value: 'active',
-                    label: Text('فعال'),
-                  ),
-                  ButtonSegment(
-                    value: 'completed',
-                    label: Text('تمام‌شده'),
-                  ),
-                ],
-                selected: {_filter},
-                onSelectionChanged: (value) {
-                  setState(() => _filter = value.first);
-                },
-                showSelectedIcon: false,
-                style: const ButtonStyle(
-                  visualDensity: VisualDensity.compact,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
             Expanded(
               child: _controller.loading
                   ? const Center(child: CircularProgressIndicator())
@@ -478,7 +434,7 @@ class _EmptyDownloads extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'لینک را اضافه کن، کپی کن یا از مرورگر برای تندرو Share کن.',
+              'برای شروع، دکمه + را بزن یا یک لینک را با تندرو Share کن.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 height: 1.8,
@@ -720,8 +676,10 @@ IconData _downloadTypeIcon(
     DownloadCategory.video => Icons.movie_outlined,
     DownloadCategory.audio => Icons.headphones_outlined,
     DownloadCategory.document => Icons.description_outlined,
+    DownloadCategory.book => Icons.menu_book_outlined,
     DownloadCategory.archive => Icons.archive_outlined,
     DownloadCategory.app => Icons.android_outlined,
+    DownloadCategory.font => Icons.font_download_outlined,
     DownloadCategory.other => Icons.insert_drive_file_outlined,
   };
 }
