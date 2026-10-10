@@ -307,8 +307,19 @@ class DownloadsController extends ChangeNotifier {
         clearError: !mismatch,
         speedBytesPerSecond: 0,
       );
+
+      var finalPath = file.path;
+      if (!mismatch) {
+        final sharedPath =
+            await _service.moveToTondroSharedStorage(_items[index]);
+        if (sharedPath != null && sharedPath.isNotEmpty) {
+          finalPath = sharedPath;
+          _items[index] = _items[index].copyWith(savePath: sharedPath);
+        }
+      }
+
       if (!mismatch && _settings.completionAction == CompletionAction.open) {
-        unawaited(_service.openFile(file.path));
+        unawaited(_service.openFile(finalPath));
       }
       notifyListeners();
       _scheduleWidgetUpdate();
