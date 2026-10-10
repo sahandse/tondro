@@ -114,6 +114,20 @@ if manifest.exists():
             1,
         )
 
+    if 'android:usesCleartextTraffic=' in text:
+        text = re.sub(
+            r'android:usesCleartextTraffic="[^"]+"',
+            'android:usesCleartextTraffic="true"',
+            text,
+            count=1,
+        )
+    else:
+        text = text.replace(
+            '<application',
+            '<application android:usesCleartextTraffic="true"',
+            1,
+        )
+
     manifest.write_text(text, encoding="utf-8")
 
     # Fail fast here instead of several minutes later in Gradle.
