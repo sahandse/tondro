@@ -119,17 +119,15 @@ class AppBackupService {
         }
 
         downloads.add(
-          DownloadItem(
-            id: original.id,
-            url: original.url,
-            fileName: original.fileName,
+          original.copyWith(
             savePath: '${directory.path}/${original.fileName}',
-            createdAt: original.createdAt,
             relativeDirectory: relativeDirectory,
             status: DownloadStatus.paused,
             receivedBytes: 0,
-            totalBytes: original.totalBytes,
             retryCount: 0,
+            speedBytesPerSecond: 0,
+            clearSchedule: true,
+            clearError: true,
           ),
         );
       }
