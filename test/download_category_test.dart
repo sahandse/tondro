@@ -32,8 +32,8 @@ void main() {
         'application/vnd.android.package-archive',
       );
       expect(mimeTypeForFileName('font.ttf'), 'font/ttf');
-      expect(mimeTypeForFileName('movie.mkv'), 'video/*');
-      expect(mimeTypeForFileName('song.flac'), 'audio/*');
+      expect(mimeTypeForFileName('movie.mkv'), 'video/x-matroska');
+      expect(mimeTypeForFileName('song.flac'), 'audio/flac');
     });
 
     test('falls back to other', () {
