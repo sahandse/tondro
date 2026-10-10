@@ -125,6 +125,16 @@ class BackgroundDownloadService {
   Future<String?> moveToTondroSharedStorage(
     DownloadItem item,
   ) async {
+    var permission =
+        await _downloader.permissions.status(PermissionType.androidSharedStorage);
+    if (permission != PermissionStatus.granted) {
+      permission = await _downloader.permissions.request(
+        PermissionType.androidSharedStorage,
+      );
+    }
+    if (permission != PermissionStatus.granted) {
+      return null;
+    }
     final category = detectDownloadCategory(item.fileName);
     var folder = item.relativeDirectory ?? categoryFolderName(category);
     folder = folder
