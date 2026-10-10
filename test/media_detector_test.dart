@@ -5,6 +5,9 @@ void main() {
   test('detects direct downloadable media URLs', () {
     expect(MediaDetector.isDirectDownloadUrl('https://cdn.example.com/a.mp4'), isTrue);
     expect(MediaDetector.isDirectDownloadUrl('https://cdn.example.com/file.zip'), isTrue);
+    expect(MediaDetector.isDirectDownloadUrl('https://cdn.example.com/report.xlsx'), isTrue);
+    expect(MediaDetector.isDirectDownloadUrl('https://cdn.example.com/font.woff2'), isTrue);
+    expect(MediaDetector.isDirectDownloadUrl('https://cdn.example.com/app.xapk'), isTrue);
     expect(
       MediaDetector.isDirectDownloadUrl(
         'https://pbs.twimg.com/media/photo?format=jpg&name=large',
