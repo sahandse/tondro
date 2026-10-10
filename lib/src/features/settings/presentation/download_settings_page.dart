@@ -168,6 +168,31 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
                       if (mounted) setState(() {});
                     },
                   ),
+                  SwitchListTile.adaptive(
+                    value: settings.pauseOnLowBattery,
+                    title: const Text('توقف در باتری کم'),
+                    subtitle: const Text(
+                      'در زمان Discharge دانلودهای فعال Pause شوند.',
+                    ),
+                    onChanged: (value) async {
+                      await widget.controller.updateSettings(
+                        settings.copyWith(pauseOnLowBattery: value),
+                      );
+                      if (mounted) setState(() {});
+                    },
+                  ),
+                  if (settings.pauseOnLowBattery)
+                    _NumberSetting(
+                      title: 'آستانه باتری (%)',
+                      value: settings.lowBatteryThreshold,
+                      values: const [10, 15, 20, 25],
+                      onChanged: (value) async {
+                        await widget.controller.updateSettings(
+                          settings.copyWith(lowBatteryThreshold: value),
+                        );
+                        if (mounted) setState(() {});
+                      },
+                    ),
                   ListTile(
                     title: const Text('محدودیت سرعت'),
                     subtitle: Text(
