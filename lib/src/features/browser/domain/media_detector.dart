@@ -9,7 +9,7 @@ class MediaDetector {
     'pdf','doc','docx','docm','dot','dotx','rtf','txt','md','odt','pages',
     'xls','xlsx','xlsm','xlsb','csv','tsv','ods','numbers','ppt','pptx',
     'pptm','pps','ppsx','odp','key','xml','json','yaml','yml','toml','ini',
-    'sql','db','sqlite','sqlite3','html','htm','css','js','ts','dart','java',
+    'sql','db','sqlite','sqlite3','html','htm','css','js','dart','java',
     'kt','c','cpp','cs','go','rs','py','php','swift','sh','ps1','bat',
     'epub','mobi','azw','azw3','fb2','djvu','cbz','cbr','cb7','lit','pdb',
     'zip','rar','7z','tar','gz','bz2','xz','zst','tgz','tbz','txz','cab',
