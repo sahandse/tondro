@@ -1,7 +1,7 @@
 name: tondro
 description: "Tondro - Persian download manager"
 publish_to: 'none'
-# market-release-ready
+# market-release-ready-1.2.1
 version: 1.2.1+5
 
 environment:
