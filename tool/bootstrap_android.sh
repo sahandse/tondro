@@ -50,6 +50,8 @@ if manifest.exists():
     permissions = [
         '<uses-permission android:name="android.permission.INTERNET"/>',
         '<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>',
+        '<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>',
+        '<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>',
     ]
     first_close = text.find(">")
     for permission in permissions:
