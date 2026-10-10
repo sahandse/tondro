@@ -7,6 +7,7 @@ import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import '../../browser/domain/media_detector.dart';
 import '../../browser/presentation/browser_page.dart';
 import '../../downloads/domain/download_category.dart';
+import '../../downloads/presentation/batch_download_page.dart';
 import '../../downloads/domain/download_item.dart';
 import '../../downloads/presentation/downloads_controller.dart';
 import '../../downloads/presentation/new_download_sheet.dart';
@@ -231,6 +232,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           PopupMenuButton<String>(
             tooltip: 'بیشتر',
             onSelected: (value) async {
+              if (value == 'batch') {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => BatchDownloadPage(
+                      controller: _controller,
+                    ),
+                  ),
+                );
+                return;
+              }
               if (value == 'browser') {
                 await Navigator.of(context).push(
                   MaterialPageRoute<void>(
@@ -253,6 +264,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               }
             },
             itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'batch',
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.playlist_add_rounded),
+                  title: Text('چند دانلود باهم'),
+                ),
+              ),
               PopupMenuItem(
                 value: 'browser',
                 child: ListTile(
