@@ -14,6 +14,8 @@ class DownloadItem {
     this.supportsRange = false,
     this.expectedSha256,
     this.computedSha256,
+    this.segmentOverride,
+    this.speedLimitKbpsOverride,
     this.status = DownloadStatus.queued,
     this.receivedBytes = 0,
     this.totalBytes = 0,
@@ -33,6 +35,8 @@ class DownloadItem {
   final bool supportsRange;
   final String? expectedSha256;
   final String? computedSha256;
+  final int? segmentOverride;
+  final int? speedLimitKbpsOverride;
   final DownloadStatus status;
   final int receivedBytes;
   final int totalBytes;
@@ -57,6 +61,8 @@ class DownloadItem {
     bool? supportsRange,
     String? expectedSha256,
     String? computedSha256,
+    int? segmentOverride,
+    int? speedLimitKbpsOverride,
     bool clearComputedSha256 = false,
     int? receivedBytes,
     int? totalBytes,
@@ -80,6 +86,9 @@ class DownloadItem {
       computedSha256: clearComputedSha256
           ? null
           : computedSha256 ?? this.computedSha256,
+      segmentOverride: segmentOverride ?? this.segmentOverride,
+      speedLimitKbpsOverride:
+          speedLimitKbpsOverride ?? this.speedLimitKbpsOverride,
       status: status ?? this.status,
       receivedBytes: receivedBytes ?? this.receivedBytes,
       totalBytes: totalBytes ?? this.totalBytes,
@@ -101,6 +110,8 @@ class DownloadItem {
         'supportsRange': supportsRange,
         'expectedSha256': expectedSha256,
         'computedSha256': computedSha256,
+        'segmentOverride': segmentOverride,
+        'speedLimitKbpsOverride': speedLimitKbpsOverride,
         'status': status.name,
         'receivedBytes': receivedBytes,
         'totalBytes': totalBytes,
@@ -120,6 +131,9 @@ class DownloadItem {
         supportsRange: map['supportsRange'] as bool? ?? false,
         expectedSha256: map['expectedSha256'] as String?,
         computedSha256: map['computedSha256'] as String?,
+        segmentOverride: (map['segmentOverride'] as num?)?.toInt(),
+        speedLimitKbpsOverride:
+            (map['speedLimitKbpsOverride'] as num?)?.toInt(),
         status: DownloadStatus.values.firstWhere(
           (value) => value.name == map['status'],
           orElse: () => DownloadStatus.paused,
