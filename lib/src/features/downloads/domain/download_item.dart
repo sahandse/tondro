@@ -50,6 +50,7 @@ class DownloadItem {
   }
 
   DownloadItem copyWith({
+    String? savePath,
     DownloadStatus? status,
     String? relativeDirectory,
     String? mimeType,
@@ -70,7 +71,7 @@ class DownloadItem {
       id: id,
       url: url,
       fileName: fileName,
-      savePath: savePath,
+      savePath: savePath ?? this.savePath,
       createdAt: createdAt,
       relativeDirectory: relativeDirectory ?? this.relativeDirectory,
       mimeType: mimeType ?? this.mimeType,
