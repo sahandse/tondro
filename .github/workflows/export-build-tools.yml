@@ -19,10 +19,11 @@ jobs:
           set -e
           ROOT="$(find "$ANDROID_SDK_ROOT/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -1)"
           test -n "$ROOT"
-          mkdir -p out/lib
+          mkdir -p out/lib out/lib64
           cp "$ROOT/apksigner" out/apksigner
           cp "$ROOT/zipalign" out/zipalign
           cp "$ROOT/lib/apksigner.jar" out/lib/apksigner.jar
+          cp "$ROOT/lib64/libc++.so" out/lib64/libc++.so
           chmod +x out/apksigner out/zipalign
           echo "$ROOT" > out/SOURCE.txt
 
