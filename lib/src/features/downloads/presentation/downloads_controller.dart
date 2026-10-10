@@ -96,6 +96,8 @@ class DownloadsController extends ChangeNotifier {
       showComplete: _settings.completionAction != CompletionAction.none,
     );
 
+    await _publishExistingCompletedFiles();
+
     _schedulerTimer = Timer.periodic(
       const Duration(seconds: 20),
       (_) async {
@@ -111,6 +113,35 @@ class DownloadsController extends ChangeNotifier {
     await _persist();
     await _startDueScheduled();
     await _enqueueReadyItems();
+  }
+
+  Future<void> _publishExistingCompletedFiles() async {
+    var changed = false;
+    for (var index = 0; index < _items.length; index++) {
+      final item = _items[index];
+      if (item.status != DownloadStatus.completed) continue;
+      if (item.savePath.contains('/Download/Tondro/') ||
+          item.savePath.contains('/Downloads/Tondro/')) {
+        continue;
+      }
+
+      final file = File(item.savePath);
+      if (!await file.exists()) continue;
+
+      try {
+        final sharedPath = await _service.moveToTondroSharedStorage(item);
+        if (sharedPath != null && sharedPath.isNotEmpty) {
+          _items[index] = item.copyWith(savePath: sharedPath);
+          changed = true;
+        }
+      } catch (_) {
+        // Keep the original private file if publishing is unavailable.
+      }
+    }
+
+    if (changed) {
+      await _persist();
+    }
   }
 
   Future<DownloadInspection> inspectUrl(String rawUrl) async {
