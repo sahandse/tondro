@@ -17,6 +17,7 @@ import '../data/background_download_service.dart';
 import '../data/download_inspection_service.dart';
 import '../data/download_store.dart';
 import '../data/segmented_download_service.dart';
+import '../data/scheduled_download_worker.dart';
 import '../data/throttled_download_service.dart';
 import '../domain/download_category.dart';
 import '../domain/download_inspection.dart';
@@ -311,6 +312,14 @@ class DownloadsController extends ChangeNotifier {
     notifyListeners();
     _scheduleWidgetUpdate();
 
+    if (scheduledAt != null && scheduledAt.isAfter(DateTime.now())) {
+      await ScheduledDownloadWorker.schedule(
+        id: item.id,
+        when: scheduledAt,
+        wifiOnly: _settings.wifiOnly,
+      );
+    }
+
     if (scheduledAt == null || !scheduledAt.isAfter(DateTime.now())) {
       await _enqueue(item);
     }
@@ -535,6 +544,7 @@ class DownloadsController extends ChangeNotifier {
     for (final item in due.toList()) {
       final index = _items.indexWhere((e) => e.id == item.id);
       if (index >= 0) {
+        await ScheduledDownloadWorker.cancel(item.id);
         _items[index] = _items[index].copyWith(clearSchedule: true);
       }
       await _enqueue(_items[index]);
@@ -548,6 +558,8 @@ class DownloadsController extends ChangeNotifier {
   }
 
   Future<void> _enqueue(DownloadItem item) async {
+    if (await _service.hasTask(item.id)) return;
+
     if (_settings.notifications) {
       await _service.ensureNotificationPermission();
     }
@@ -846,6 +858,7 @@ class DownloadsController extends ChangeNotifier {
 
     final item = _items[index];
     if (item.scheduledAt != null && item.scheduledAt!.isAfter(DateTime.now())) {
+      await ScheduledDownloadWorker.cancel(id);
       _items[index] = item.copyWith(status: DownloadStatus.paused);
       notifyListeners();
     _scheduleWidgetUpdate();
@@ -884,6 +897,8 @@ class DownloadsController extends ChangeNotifier {
     final index = _items.indexWhere((e) => e.id == id);
     if (index < 0) return;
 
+    await ScheduledDownloadWorker.cancel(id);
+
     _items[index] = _items[index].copyWith(
       status: DownloadStatus.queued,
       clearSchedule: true,
@@ -893,7 +908,7 @@ class DownloadsController extends ChangeNotifier {
     _scheduleWidgetUpdate();
     await _persist();
 
-    if (_settings.speedLimitKbps > 0) {
+    if (_speedLimitFor(_items[index]) > 0) {
       _pumpThrottledQueue();
       return;
     }
@@ -913,6 +928,8 @@ class DownloadsController extends ChangeNotifier {
   Future<void> remove(String id) async {
     final index = _items.indexWhere((e) => e.id == id);
     if (index < 0) return;
+
+    await ScheduledDownloadWorker.cancel(id);
 
     if (_segmentedActive.contains(id)) {
       _segmentedService.pause(id);
