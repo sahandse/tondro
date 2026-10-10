@@ -168,6 +168,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         customFolder: request.customFolder,
         duplicatePolicy: request.duplicatePolicy,
         expectedSha256: request.expectedSha256,
+        segmentOverride: request.segmentOverride,
+        speedLimitKbpsOverride: request.speedLimitKbpsOverride,
         inspection: request.inspection,
       );
     } on FormatException catch (error) {
