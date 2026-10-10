@@ -208,6 +208,8 @@ class DownloadsController extends ChangeNotifier {
     String? customFolder,
     DuplicatePolicy duplicatePolicy = DuplicatePolicy.rename,
     String? expectedSha256,
+    int? segmentOverride,
+    int? speedLimitKbpsOverride,
     DownloadInspection? inspection,
   }) async {
     final uri = Uri.tryParse(rawUrl.trim());
@@ -296,6 +298,8 @@ class DownloadsController extends ChangeNotifier {
           normalizedExpected == null || normalizedExpected.isEmpty
               ? null
               : normalizedExpected,
+      segmentOverride: segmentOverride,
+      speedLimitKbpsOverride: speedLimitKbpsOverride,
       receivedBytes: existingBytes,
       totalBytes: resolvedInspection?.totalBytes ?? 0,
       scheduledAt: scheduledAt,
@@ -387,6 +391,11 @@ class DownloadsController extends ChangeNotifier {
       _profileForUrl(item.url)?.requestHeaders ?? const <String, String>{};
 
   int _segmentsFor(DownloadItem item) {
+    final itemSegments = item.segmentOverride;
+    if (itemSegments != null) {
+      return item.supportsRange ? itemSegments.clamp(1, 16) : 1;
+    }
+
     final profileSegments = _profileForUrl(item.url)?.maxSegments;
     if (profileSegments != null) {
       return item.supportsRange ? profileSegments.clamp(1, 16) : 1;
@@ -406,6 +415,9 @@ class DownloadsController extends ChangeNotifier {
     };
     return suggested > cap ? cap : suggested;
   }
+
+  int _speedLimitFor(DownloadItem item) =>
+      item.speedLimitKbpsOverride ?? _settings.speedLimitKbps;
 
   Future<void> _onDownloadCompleted(String id) async {
     final index = _items.indexWhere((item) => item.id == id);
@@ -539,7 +551,7 @@ class DownloadsController extends ChangeNotifier {
     if (_settings.notifications) {
       await _service.ensureNotificationPermission();
     }
-    if (_settings.speedLimitKbps > 0) {
+    if (_speedLimitFor(item) > 0) {
       _pumpThrottledQueue();
       return;
     }
@@ -566,6 +578,7 @@ class DownloadsController extends ChangeNotifier {
     final now = DateTime.now();
     final ready = _items.where((item) {
       if (item.status != DownloadStatus.queued) return false;
+      if (_speedLimitFor(item) > 0) return false;
       if (_segmentsFor(item) <= 1) return false;
       if (_segmentedActive.contains(item.id)) return false;
       return item.scheduledAt == null || !item.scheduledAt!.isAfter(now);
@@ -667,7 +680,6 @@ class DownloadsController extends ChangeNotifier {
   }
 
   void _pumpThrottledQueue() {
-    if (_settings.speedLimitKbps <= 0) return;
     if (_settings.wifiOnly && !_service.isWiFi) return;
     final available =
         _settings.maxConcurrentDownloads - _throttledActive.length;
@@ -676,6 +688,7 @@ class DownloadsController extends ChangeNotifier {
     final now = DateTime.now();
     final ready = _items.where((item) {
       if (item.status != DownloadStatus.queued) return false;
+      if (_speedLimitFor(item) <= 0) return false;
       if (_throttledActive.contains(item.id)) return false;
       return item.scheduledAt == null || !item.scheduledAt!.isAfter(now);
     }).take(available).toList();
@@ -703,7 +716,7 @@ class DownloadsController extends ChangeNotifier {
     try {
       await _throttledService.download(
         item: _items[index],
-        speedLimitKbps: _settings.speedLimitKbps,
+        speedLimitKbps: _speedLimitFor(_items[index]),
         headers: _headersFor(_items[index]),
         onProgress: (received, total, speed) {
           final liveIndex = _items.indexWhere((item) => item.id == id);
