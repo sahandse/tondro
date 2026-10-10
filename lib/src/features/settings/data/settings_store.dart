@@ -13,6 +13,8 @@ class SettingsStore {
   static const _smartSegments = 'settings.smartSegments';
   static const _networkProfile = 'settings.networkProfile';
   static const _completionAction = 'settings.completionAction';
+  static const _pauseOnLowBattery = 'settings.pauseOnLowBattery';
+  static const _lowBatteryThreshold = 'settings.lowBatteryThreshold';
 
   Future<DownloadSettings> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -33,6 +35,8 @@ class SettingsStore {
         (value) => value.name == prefs.getString(_completionAction),
         orElse: () => CompletionAction.notify,
       ),
+      pauseOnLowBattery: prefs.getBool(_pauseOnLowBattery) ?? false,
+      lowBatteryThreshold: prefs.getInt(_lowBatteryThreshold) ?? 15,
     );
   }
 
@@ -49,6 +53,8 @@ class SettingsStore {
       prefs.setBool(_smartSegments, settings.smartSegments),
       prefs.setString(_networkProfile, settings.networkProfile.name),
       prefs.setString(_completionAction, settings.completionAction.name),
+      prefs.setBool(_pauseOnLowBattery, settings.pauseOnLowBattery),
+      prefs.setInt(_lowBatteryThreshold, settings.lowBatteryThreshold),
     ]);
   }
 }
