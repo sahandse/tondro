@@ -22,6 +22,18 @@ import '../domain/download_inspection.dart';
 import '../domain/download_item.dart';
 import '../domain/duplicate_policy.dart';
 
+class BatchAddResult {
+  const BatchAddResult({
+    required this.added,
+    required this.invalid,
+    required this.duplicates,
+  });
+
+  final int added;
+  final int invalid;
+  final int duplicates;
+}
+
 class DownloadsController extends ChangeNotifier {
   DownloadsController({
     DownloadStore? store,
@@ -267,6 +279,53 @@ class DownloadsController extends ChangeNotifier {
       await _enqueue(item);
     }
   }
+  Future<BatchAddResult> addUrls(
+    Iterable<String> rawUrls, {
+    String? customFolder,
+  }) async {
+    final seen = <String>{};
+    var added = 0;
+    var invalid = 0;
+    var duplicates = 0;
+
+    for (final raw in rawUrls) {
+      final value = raw.trim();
+      if (value.isEmpty) continue;
+
+      final uri = Uri.tryParse(value);
+      if (uri == null ||
+          !uri.hasScheme ||
+          !{'http', 'https'}.contains(uri.scheme)) {
+        invalid++;
+        continue;
+      }
+
+      final normalized = uri.toString();
+      if (!seen.add(normalized) ||
+          _items.any((item) => item.url == normalized)) {
+        duplicates++;
+        continue;
+      }
+
+      try {
+        await addUrl(
+          normalized,
+          customFolder: customFolder,
+          duplicatePolicy: DuplicatePolicy.rename,
+        );
+        added++;
+      } on FormatException {
+        invalid++;
+      }
+    }
+
+    return BatchAddResult(
+      added: added,
+      invalid: invalid,
+      duplicates: duplicates,
+    );
+  }
+
   String _sanitizeFileName(String value, String fallback) {
     final sanitized = value
         .replaceAll(RegExp(r'[\\/:*?"<>|]'), '_')
