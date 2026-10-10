@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:background_downloader/background_downloader.dart';
+import 'package:battery_plus/battery_plus.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
@@ -64,7 +65,9 @@ class DownloadsController extends ChangeNotifier {
   final Set<String> _segmentedActive = {};
 
   Timer? _schedulerTimer;
+  Timer? _batteryTimer;
   Timer? _widgetUpdateTimer;
+  final Battery _battery = Battery();
   final TondroWidgetService _widgetService = TondroWidgetService();
   bool _loading = true;
   DownloadSettings _settings = const DownloadSettings();
@@ -110,6 +113,12 @@ class DownloadsController extends ChangeNotifier {
 
     await _publishExistingCompletedFiles();
 
+    _batteryTimer = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) => unawaited(_checkLowBattery()),
+    );
+    unawaited(_checkLowBattery());
+
     _schedulerTimer = Timer.periodic(
       const Duration(seconds: 20),
       (_) async {
@@ -125,6 +134,29 @@ class DownloadsController extends ChangeNotifier {
     await _persist();
     await _startDueScheduled();
     await _enqueueReadyItems();
+  }
+
+  Future<void> _checkLowBattery() async {
+    if (!_settings.pauseOnLowBattery) return;
+
+    try {
+      final level = await _battery.batteryLevel;
+      final state = await _battery.batteryState;
+      final discharging = state == BatteryState.discharging;
+
+      if (!discharging || level > _settings.lowBatteryThreshold) return;
+
+      final activeIds = _items
+          .where((item) => item.status == DownloadStatus.downloading)
+          .map((item) => item.id)
+          .toList();
+
+      for (final id in activeIds) {
+        await pause(id);
+      }
+    } catch (_) {
+      // Battery monitoring is optional and must never interrupt downloads.
+    }
   }
 
   Future<void> _publishExistingCompletedFiles() async {
@@ -1098,6 +1130,7 @@ class DownloadsController extends ChangeNotifier {
   @override
   void dispose() {
     _schedulerTimer?.cancel();
+    _batteryTimer?.cancel();
     _widgetUpdateTimer?.cancel();
     for (final id in _segmentedActive.toList()) {
       _segmentedService.pause(id);
