@@ -55,8 +55,22 @@ class _TorrentPageState extends State<TorrentPage> {
     );
     final path = file?.path;
     if (path == null) return;
+
     try {
-      await _controller.addTorrentFile(path);
+      final model = await _controller.inspectTorrentFile(path);
+      List<int>? selected;
+      if (model.files.length > 1 && mounted) {
+        selected = await _selectFiles(
+          model.files
+              .map((file) => (name: file.path, size: file.length))
+              .toList(),
+        );
+        if (selected == null || selected.isEmpty) return;
+      }
+      await _controller.addTorrentFile(
+        path,
+        selectedFiles: selected,
+      );
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -65,6 +79,121 @@ class _TorrentPageState extends State<TorrentPage> {
     }
   }
 
+  Future<List<int>?> _selectFiles(
+    List<({String name, int size})> entries,
+  ) async {
+    final selected = List<bool>.filled(entries.length, true);
+
+    return showModalBottomSheet<List<int>>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: .7,
+          minChildSize: .4,
+          maxChildSize: .92,
+          builder: (context, scrollController) => Column(
+            children: [
+              ListTile(
+                title: const Text('انتخاب فایل‌ها'),
+                subtitle: Text('${entries.length} فایل'),
+                trailing: TextButton(
+                  onPressed: () {
+                    setSheetState(() {
+                      final allSelected = selected.every((value) => value);
+                      for (var i = 0; i < selected.length; i++) {
+                        selected[i] = !allSelected;
+                      }
+                    });
+                  },
+                  child: const Text('همه/هیچ'),
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollController,
+                  itemCount: entries.length,
+                  itemBuilder: (context, index) {
+                    final entry = entries[index];
+                    return CheckboxListTile(
+                      value: selected[index],
+                      onChanged: (value) {
+                        setSheetState(() {
+                          selected[index] = value ?? false;
+                        });
+                      },
+                      title: Text(
+                        entry.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textDirection: TextDirection.ltr,
+                      ),
+                      subtitle: Text(_formatBytes(entry.size)),
+                    );
+                  },
+                ),
+              ),
+              SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () {
+                        final indices = <int>[];
+                        for (var i = 0; i < selected.length; i++) {
+                          if (selected[i]) indices.add(i);
+                        }
+                        Navigator.pop(context, indices);
+                      },
+                      child: const Text('تأیید فایل‌ها'),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _editSessionFiles(TorrentSession session) async {
+    final task = session.task;
+    if (task == null) return;
+    final entries = task.metaInfo.files
+        .map((file) => (name: file.path, size: file.length))
+        .toList();
+    if (entries.isEmpty) return;
+
+    final indices = await _selectFiles(entries);
+    if (indices == null || indices.isEmpty) return;
+    _controller.applySelectedFiles(session.id, indices);
+  }
+
+  String _formatBytes(int value) {
+    if (value >= 1024 * 1024 * 1024) {
+      return '${(value / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
+    }
+    if (value >= 1024 * 1024) {
+      return '${(value / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
+    if (value >= 1024) {
+      return '${(value / 1024).toStringAsFixed(0)} KB';
+    }
+    return '$value B';
+  }
+
+  String _formatSpeed(double value) {
+    if (value <= 0) return '0 KB/s';
+    if (value >= 1024 * 1024) {
+      return '${(value / (1024 * 1024)).toStringAsFixed(1)} MB/s';
+    }
+    return '${(value / 1024).toStringAsFixed(0)} KB/s';
+  }
   @override
   Widget build(BuildContext context) {
     final sessions = _controller.sessions;
@@ -161,6 +290,25 @@ class _TorrentPageState extends State<TorrentPage> {
                           minHeight: 8,
                         ),
                       ],
+                      if (session.task != null) ...[
+                        const SizedBox(height: 10),
+                        LinearProgressIndicator(
+                          value: session.progress.clamp(0, 1).toDouble(),
+                          minHeight: 6,
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 6,
+                          children: [
+                            Text(
+                              '${(session.progress * 100).clamp(0, 100).toStringAsFixed(0)}٪',
+                            ),
+                            Text(_formatSpeed(session.downloadSpeed)),
+                            Text('${session.connectedPeers} Peer'),
+                          ],
+                        ),
+                      ],
                       const SizedBox(height: 10),
                       Row(
                         children: [
@@ -180,6 +328,12 @@ class _TorrentPageState extends State<TorrentPage> {
                             icon: const Icon(Icons.play_arrow_rounded),
                           ),
                           const Spacer(),
+                          if (session.task != null)
+                            TextButton.icon(
+                              onPressed: () => _editSessionFiles(session),
+                              icon: const Icon(Icons.folder_copy_outlined),
+                              label: const Text('فایل‌ها'),
+                            ),
                           TextButton.icon(
                             onPressed: session.task == null
                                 ? null
