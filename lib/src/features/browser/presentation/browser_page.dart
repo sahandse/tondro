@@ -522,7 +522,7 @@ class _BrowserPageState extends State<BrowserPage> {
               if (value == 'desktop') await _toggleDesktopMode();
               if (value == 'clearHistory') {
                 await _store.clearHistory();
-                if (!mounted) return;
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('تاریخچه پاک شد')),
                 );
