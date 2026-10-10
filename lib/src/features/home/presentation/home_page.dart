@@ -13,6 +13,7 @@ import '../../downloads/presentation/downloads_controller.dart';
 import '../../downloads/presentation/new_download_sheet.dart';
 import '../../files/presentation/file_library_page.dart';
 import '../../settings/presentation/download_settings_page.dart';
+import 'widgets/download_flow_indicator.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -576,10 +577,9 @@ class _DownloadCard extends StatelessWidget {
                     ),
                     if (!isDone) ...[
                       const SizedBox(height: 8),
-                      LinearProgressIndicator(
-                        value: progress,
-                        minHeight: 5,
-                        borderRadius: BorderRadius.circular(99),
+                      DownloadFlowIndicator(
+                        progress: progress,
+                        active: isRunning,
                       ),
                     ],
                   ],
