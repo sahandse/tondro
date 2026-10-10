@@ -36,6 +36,8 @@ class DownloadSettings {
     this.smartSegments = true,
     this.networkProfile = NetworkProfilePreset.balanced,
     this.completionAction = CompletionAction.notify,
+    this.pauseOnLowBattery = false,
+    this.lowBatteryThreshold = 15,
   });
 
   final int maxConcurrentDownloads;
@@ -48,6 +50,8 @@ class DownloadSettings {
   final bool smartSegments;
   final NetworkProfilePreset networkProfile;
   final CompletionAction completionAction;
+  final bool pauseOnLowBattery;
+  final int lowBatteryThreshold;
 
   DownloadSettings copyWith({
     int? maxConcurrentDownloads,
@@ -60,6 +64,8 @@ class DownloadSettings {
     bool? smartSegments,
     NetworkProfilePreset? networkProfile,
     CompletionAction? completionAction,
+    bool? pauseOnLowBattery,
+    int? lowBatteryThreshold,
   }) {
     return DownloadSettings(
       maxConcurrentDownloads:
@@ -73,6 +79,8 @@ class DownloadSettings {
       smartSegments: smartSegments ?? this.smartSegments,
       networkProfile: networkProfile ?? this.networkProfile,
       completionAction: completionAction ?? this.completionAction,
+      pauseOnLowBattery: pauseOnLowBattery ?? this.pauseOnLowBattery,
+      lowBatteryThreshold: lowBatteryThreshold ?? this.lowBatteryThreshold,
     );
   }
 }
