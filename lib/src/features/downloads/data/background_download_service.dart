@@ -109,6 +109,9 @@ class BackgroundDownloadService {
     return true;
   }
 
+  Future<bool> hasTask(String id) async =>
+      await _downloader.taskForId(id) != null;
+
   Future<bool> pause(String id) async {
     final task = await _downloader.taskForId(id);
     return task is DownloadTask ? _downloader.pause(task) : false;
