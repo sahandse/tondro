@@ -153,6 +153,8 @@ class AppBackupService {
         'smartSegments': value.smartSegments,
         'networkProfile': value.networkProfile.name,
         'completionAction': value.completionAction.name,
+        'pauseOnLowBattery': value.pauseOnLowBattery,
+        'lowBatteryThreshold': value.lowBatteryThreshold,
       };
 
   DownloadSettings _settingsFromMap(Map<String, dynamic> map) =>
@@ -174,5 +176,8 @@ class AppBackupService {
           (value) => value.name == map['completionAction'],
           orElse: () => CompletionAction.notify,
         ),
+        pauseOnLowBattery: map['pauseOnLowBattery'] as bool? ?? false,
+        lowBatteryThreshold:
+            (map['lowBatteryThreshold'] as num?)?.toInt() ?? 15,
       );
 }
