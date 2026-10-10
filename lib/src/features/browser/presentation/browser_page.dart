@@ -213,7 +213,10 @@ class _BrowserPageState extends State<BrowserPage> {
   Future<void> _scanPage(_BrowserTab tab) async {
     try {
       final raw = await tab.controller.runJavaScriptReturningResult(
-        "JSON.stringify(Array.from(document.querySelectorAll('a[href],video[src],audio[src],source[src]')).map(function(el){return el.href || el.src || '';}).filter(Boolean))",
+        "JSON.stringify({"
+        "direct:Array.from(document.querySelectorAll('a[href],video[src],audio[src],source[src]')).map(function(el){return el.href || el.src || '';}).filter(Boolean),"
+        "download:Array.from(document.querySelectorAll('a[download][href]')).map(function(el){return el.href || '';}).filter(Boolean)"
+        "})",
       );
       dynamic decoded = raw;
       if (decoded is String) {
@@ -222,10 +225,20 @@ class _BrowserPageState extends State<BrowserPage> {
           if (decoded is String) decoded = jsonDecode(decoded);
         } catch (_) {}
       }
-      if (decoded is! List) return;
-      tab.detected.addAll(
-        MediaDetector.extractDirectUrls(decoded.whereType<String>()),
-      );
+      if (decoded is! Map) return;
+      final map = Map<String, dynamic>.from(decoded);
+      final direct = (map['direct'] as List? ?? const <dynamic>[])
+          .whereType<String>();
+      final explicitDownloads = (map['download'] as List? ?? const <dynamic>[])
+          .whereType<String>();
+
+      tab.detected.addAll(MediaDetector.extractDirectUrls(direct));
+      for (final url in explicitDownloads) {
+        final uri = Uri.tryParse(url);
+        if (uri != null && {'http', 'https'}.contains(uri.scheme)) {
+          tab.detected.add(url);
+        }
+      }
       if (mounted && _active.id == tab.id) setState(() {});
     } catch (_) {}
   }
