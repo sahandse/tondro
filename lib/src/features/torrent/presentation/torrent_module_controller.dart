@@ -14,6 +14,9 @@ class TorrentSession {
     required this.source,
     this.status = 'در انتظار',
     this.metadataProgress = 0,
+    this.progress = 0,
+    this.downloadSpeed = 0,
+    this.connectedPeers = 0,
     this.task,
   });
 
@@ -22,16 +25,33 @@ class TorrentSession {
   final String source;
   String status;
   double metadataProgress;
+  double progress;
+  double downloadSpeed;
+  int connectedPeers;
   TorrentTask? task;
 }
 
 class TorrentModuleController extends ChangeNotifier {
+  TorrentModuleController() {
+    _ticker = Timer.periodic(
+      const Duration(milliseconds: 750),
+      (_) => _refreshRuntimeStats(),
+    );
+  }
+
   final List<TorrentSession> _sessions = [];
   final List<Object> _listeners = [];
+  Timer? _ticker;
 
   List<TorrentSession> get sessions => List.unmodifiable(_sessions);
 
-  Future<void> addTorrentFile(String path) async {
+  Future<TorrentModel> inspectTorrentFile(String path) =>
+      TorrentModel.parse(path);
+
+  Future<void> addTorrentFile(
+    String path, {
+    List<int>? selectedFiles,
+  }) async {
     final directory = await _torrentDirectory();
     final name = path.split(RegExp(r'[\\/]')).last;
     final session = TorrentSession(
@@ -46,6 +66,9 @@ class TorrentModuleController extends ChangeNotifier {
     try {
       final model = await TorrentModel.parse(path);
       final task = TorrentTask.newTask(model, directory.path);
+      if (selectedFiles != null && selectedFiles.isNotEmpty) {
+        task.applySelectedFiles(selectedFiles);
+      }
       session.task = task;
       _bindTask(session, task);
       session.status = 'در حال دانلود';
@@ -173,6 +196,36 @@ class TorrentModuleController extends ChangeNotifier {
       });
   }
 
+  void applySelectedFiles(String id, List<int> indices) {
+    final session = _find(id);
+    final task = session?.task;
+    if (task == null || indices.isEmpty) return;
+    task.applySelectedFiles(indices);
+    notifyListeners();
+  }
+
+  void _refreshRuntimeStats() {
+    var changed = false;
+    for (final session in _sessions) {
+      final task = session.task;
+      if (task == null) continue;
+
+      final nextProgress = task.progress.clamp(0, 1).toDouble();
+      final nextSpeed = task.currentDownloadSpeed;
+      final nextPeers = task.connectedPeersNumber;
+
+      if ((session.progress - nextProgress).abs() > .001 ||
+          (session.downloadSpeed - nextSpeed).abs() > 1024 ||
+          session.connectedPeers != nextPeers) {
+        session.progress = nextProgress;
+        session.downloadSpeed = nextSpeed;
+        session.connectedPeers = nextPeers;
+        changed = true;
+      }
+    }
+    if (changed) notifyListeners();
+  }
+
   void pause(String id) {
     final session = _find(id);
     session?.task?.pause();
@@ -214,5 +267,16 @@ class TorrentModuleController extends ChangeNotifier {
       await directory.create(recursive: true);
     }
     return directory;
+  }
+
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    _ticker = null;
+    for (final session in _sessions) {
+      unawaited(session.task?.dispose());
+    }
+    super.dispose();
   }
 }
