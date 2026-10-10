@@ -122,6 +122,60 @@ class BackgroundDownloadService {
 
   Future<bool> cancel(String id) => _downloader.cancelTaskWithId(id);
 
+  Future<String?> moveToTondroSharedStorage(
+    DownloadItem item,
+  ) async {
+    final category = detectDownloadCategory(item.fileName);
+    var folder = item.relativeDirectory ?? categoryFolderName(category);
+    folder = folder
+        .replaceFirst(RegExp(r'^downloads/?', caseSensitive: false), '')
+        .replaceAll(RegExp(r'^/+|/+
+    return _downloader.openFile(filePath: filePath);
+  }
+
+  Future<void> configureNotifications(
+    bool enabled, {
+    bool showComplete = true,
+  }) async {
+    if (enabled) {
+      _downloader.configureNotification(
+        running: const TaskNotification('تندرو', 'در حال دانلود {filename}'),
+        complete: showComplete
+            ? const TaskNotification('دانلود کامل شد', '{filename}')
+            : null,
+        error: const TaskNotification('دانلود ناموفق بود', '{filename}'),
+        paused: const TaskNotification('دانلود متوقف شد', '{filename}'),
+        progressBar: true,
+        tapOpensFile: true,
+      );
+    } else {
+      _downloader.configureNotification(
+        running: null,
+        complete: null,
+        error: null,
+        paused: null,
+      );
+    }
+  }
+
+  Future<void> dispose() async {
+    await _updatesSub?.cancel();
+    _updatesSub = null;
+  }
+}
+), '');
+    if (folder.isEmpty) {
+      folder = categoryFolderName(category);
+    }
+
+    return _downloader.moveFileToSharedStorage(
+      item.savePath,
+      SharedStorage.downloads,
+      directory: 'Tondro/$folder',
+      mimeType: mimeTypeForFileName(item.fileName),
+    );
+  }
+
   Future<bool> openFile(String filePath) {
     return _downloader.openFile(filePath: filePath);
   }
