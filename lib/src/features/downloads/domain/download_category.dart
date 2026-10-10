@@ -96,9 +96,36 @@ String categoryLabelFa(DownloadCategory category) => switch (category) {
       DownloadCategory.other => 'سایر',
     };
 
-String mimeTypeForFileName(String fileName) {
+String? mimeTypeForFileName(String fileName) {
   final ext = fileExtension(fileName);
   const exact = <String, String>{
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'gif': 'image/gif',
+    'webp': 'image/webp',
+    'bmp': 'image/bmp',
+    'svg': 'image/svg+xml',
+    'heic': 'image/heic',
+    'heif': 'image/heif',
+    'avif': 'image/avif',
+    'mp4': 'video/mp4',
+    'm4v': 'video/x-m4v',
+    'mkv': 'video/x-matroska',
+    'webm': 'video/webm',
+    'mov': 'video/quicktime',
+    'avi': 'video/x-msvideo',
+    'mpeg': 'video/mpeg',
+    'mpg': 'video/mpeg',
+    '3gp': 'video/3gpp',
+    'mp3': 'audio/mpeg',
+    'm4a': 'audio/mp4',
+    'aac': 'audio/aac',
+    'wav': 'audio/wav',
+    'flac': 'audio/flac',
+    'ogg': 'audio/ogg',
+    'opus': 'audio/opus',
+    'wma': 'audio/x-ms-wma',
     'pdf': 'application/pdf',
     'epub': 'application/epub+zip',
     'json': 'application/json',
@@ -109,35 +136,26 @@ String mimeTypeForFileName(String fileName) {
     'txt': 'text/plain',
     'md': 'text/markdown',
     'doc': 'application/msword',
-    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'docx':
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'xls': 'application/vnd.ms-excel',
-    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'xlsx':
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'ppt': 'application/vnd.ms-powerpoint',
-    'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'pptx':
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
     'zip': 'application/zip',
     'rar': 'application/vnd.rar',
     '7z': 'application/x-7z-compressed',
     'gz': 'application/gzip',
     'tar': 'application/x-tar',
     'apk': 'application/vnd.android.package-archive',
+    'xapk': 'application/octet-stream',
+    'apks': 'application/octet-stream',
     'ttf': 'font/ttf',
     'otf': 'font/otf',
     'woff': 'font/woff',
     'woff2': 'font/woff2',
-    'svg': 'image/svg+xml',
   };
-  final direct = exact[ext];
-  if (direct != null) return direct;
-
-  return switch (detectDownloadCategory(fileName)) {
-    DownloadCategory.image => 'image/*',
-    DownloadCategory.video => 'video/*',
-    DownloadCategory.audio => 'audio/*',
-    DownloadCategory.document => 'application/octet-stream',
-    DownloadCategory.book => 'application/octet-stream',
-    DownloadCategory.archive => 'application/octet-stream',
-    DownloadCategory.app => 'application/octet-stream',
-    DownloadCategory.font => 'application/octet-stream',
-    DownloadCategory.other => 'application/octet-stream',
-  };
+  return exact[ext];
 }
