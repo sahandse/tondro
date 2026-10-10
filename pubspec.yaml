@@ -26,6 +26,7 @@ dependencies:
   intl: ^0.20.3
   crypto: ^3.0.7
   share_plus: ^13.3.1
+  battery_plus: ^6.2.3
 
 dev_dependencies:
   flutter_test:
