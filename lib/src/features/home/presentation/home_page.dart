@@ -181,7 +181,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
   List<DownloadItem> _visibleItems(List<DownloadItem> source) {
-    final list = source.toList();
+    final active = source
+        .where((item) => item.status != DownloadStatus.completed)
+        .toList();
+    final recentCompleted = source
+        .where((item) => item.status == DownloadStatus.completed)
+        .toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
     int priority(DownloadStatus status) => switch (status) {
           DownloadStatus.downloading => 0,
           DownloadStatus.queued => 1,
@@ -189,12 +196,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           DownloadStatus.failed => 3,
           DownloadStatus.completed => 4,
         };
-    list.sort((a, b) {
+    active.sort((a, b) {
       final statusOrder = priority(a.status).compareTo(priority(b.status));
       if (statusOrder != 0) return statusOrder;
       return b.createdAt.compareTo(a.createdAt);
     });
-    return list;
+
+    return [
+      ...active,
+      ...recentCompleted.take(5),
+    ];
   }
 
   @override
