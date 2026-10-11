@@ -374,6 +374,7 @@ class DownloadsController extends ChangeNotifier {
   Future<BatchAddResult> addUrls(
     Iterable<String> rawUrls, {
     String? customFolder,
+    DateTime? scheduledAt,
   }) async {
     final seen = <String>{};
     var added = 0;
@@ -403,6 +404,7 @@ class DownloadsController extends ChangeNotifier {
         await addUrl(
           normalized,
           customFolder: customFolder,
+          scheduledAt: scheduledAt,
           duplicatePolicy: DuplicatePolicy.rename,
         );
         added++;
