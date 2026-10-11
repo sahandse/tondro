@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:persian_datetime_picker/persian_datetime_picker.dart';
 
 import 'src/app/theme/app_theme.dart';
 import 'src/app/theme/theme_controller.dart';
@@ -24,8 +25,10 @@ class TondroApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: 'تندرو',
         locale: const Locale('fa'),
-        supportedLocales: const [Locale('fa')],
+        supportedLocales: const [Locale('fa', 'IR'), Locale('en', 'US')],
         localizationsDelegates: const [
+          PersianMaterialLocalizations.delegate,
+          PersianCupertinoLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
