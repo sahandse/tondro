@@ -78,6 +78,14 @@ class DownloadsController extends ChangeNotifier {
   DownloadSettings get settings => _settings;
   List<SiteProfile> get siteProfiles => List.unmodifiable(_siteProfiles);
 
+  int? queuePosition(String id) {
+    if (!_settings.sequentialDownloads) return null;
+    final ready = _readyQueuedItems();
+    final index = ready.indexWhere((item) => item.id == id);
+    return index < 0 ? null : index + 1;
+  }
+
+
   int get _effectiveMaxConcurrent =>
       _settings.sequentialDownloads ? 1 : _settings.maxConcurrentDownloads;
 
