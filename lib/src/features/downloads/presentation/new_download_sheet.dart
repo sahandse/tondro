@@ -146,21 +146,6 @@ class _NewDownloadSheetState extends State<NewDownloadSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  const TondroLogo(size: 44),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'دانلود جدید',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w900,
-                          ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
               TextField(
                 controller: _input,
                 autofocus: widget.initialUrl == null,
