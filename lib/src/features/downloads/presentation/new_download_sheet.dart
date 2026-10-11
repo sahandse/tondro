@@ -232,50 +232,52 @@ class _NewDownloadSheetState extends State<NewDownloadSheet> {
                       ),
                 ),
               ],
-              const SizedBox(height: 12),
-              TextField(
-                controller: _folder,
-                decoration: const InputDecoration(
-                  labelText: 'پوشه ذخیره (اختیاری)',
-                  hintText: 'مثلاً Movies',
-                  prefixIcon: Icon(Icons.folder_outlined),
-                ),
-              ),
-              const SizedBox(height: 10),
-              DropdownButtonFormField<DuplicatePolicy>(
-                initialValue: _duplicatePolicy,
-                decoration: const InputDecoration(
-                  labelText: 'اگر فایل تکراری بود',
-                ),
-                items: DuplicatePolicy.values
-                    .map(
-                      (value) => DropdownMenuItem(
-                        value: value,
-                        child: Text(duplicatePolicyLabelFa(value)),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) setState(() => _duplicatePolicy = value);
-                },
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _sha256,
-                textDirection: TextDirection.ltr,
-                decoration: const InputDecoration(
-                  labelText: 'SHA-256 (اختیاری)',
-                  hintText: '64 hex characters',
-                  prefixIcon: Icon(Icons.verified_user_outlined),
-                ),
-              ),
               const SizedBox(height: 10),
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,
                 childrenPadding: EdgeInsets.zero,
-                title: const Text('تنظیمات پیشرفته'),
-                subtitle: const Text('اتصال و سقف سرعت همین فایل'),
+                title: const Text('گزینه‌های بیشتر'),
+                subtitle: const Text('پوشه، فایل تکراری، SHA-256 و سرعت'),
                 children: [
+                  TextField(
+                    controller: _folder,
+                    decoration: const InputDecoration(
+                      labelText: 'پوشه ذخیره',
+                      hintText: 'مثلاً Movies',
+                      prefixIcon: Icon(Icons.folder_outlined),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<DuplicatePolicy>(
+                    initialValue: _duplicatePolicy,
+                    decoration: const InputDecoration(
+                      labelText: 'اگر فایل تکراری بود',
+                    ),
+                    items: DuplicatePolicy.values
+                        .map(
+                          (value) => DropdownMenuItem(
+                            value: value,
+                            child: Text(duplicatePolicyLabelFa(value)),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => _duplicatePolicy = value);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _sha256,
+                    textDirection: TextDirection.ltr,
+                    decoration: const InputDecoration(
+                      labelText: 'SHA-256',
+                      hintText: '64 hex characters',
+                      prefixIcon: Icon(Icons.verified_user_outlined),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                   DropdownButtonFormField<int?>(
                     initialValue: _segmentOverride,
                     decoration: const InputDecoration(
@@ -284,7 +286,7 @@ class _NewDownloadSheetState extends State<NewDownloadSheet> {
                     items: const [
                       DropdownMenuItem<int?>(
                         value: null,
-                        child: Text('Auto'),
+                        child: Text('خودکار'),
                       ),
                       DropdownMenuItem<int?>(value: 1, child: Text('1')),
                       DropdownMenuItem<int?>(value: 2, child: Text('2')),
@@ -307,22 +309,10 @@ class _NewDownloadSheetState extends State<NewDownloadSheet> {
                         value: 0,
                         child: Text('تنظیم عمومی'),
                       ),
-                      DropdownMenuItem(
-                        value: 512,
-                        child: Text('512 KB/s'),
-                      ),
-                      DropdownMenuItem(
-                        value: 1024,
-                        child: Text('1 MB/s'),
-                      ),
-                      DropdownMenuItem(
-                        value: 2048,
-                        child: Text('2 MB/s'),
-                      ),
-                      DropdownMenuItem(
-                        value: 4096,
-                        child: Text('4 MB/s'),
-                      ),
+                      DropdownMenuItem(value: 512, child: Text('512 KB/s')),
+                      DropdownMenuItem(value: 1024, child: Text('1 MB/s')),
+                      DropdownMenuItem(value: 2048, child: Text('2 MB/s')),
+                      DropdownMenuItem(value: 4096, child: Text('4 MB/s')),
                     ],
                     onChanged: (value) {
                       if (value != null) {
@@ -331,8 +321,7 @@ class _NewDownloadSheetState extends State<NewDownloadSheet> {
                     },
                   ),
                 ],
-              ),
-              const SizedBox(height: 12),
+              ),              const SizedBox(height: 12),
               OutlinedButton.icon(
                 onPressed: _pickSchedule,
                 icon: const Icon(Icons.schedule_rounded),
