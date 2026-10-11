@@ -21,7 +21,14 @@ class TondroApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: ThemeController.instance,
-      builder: (context, _) => MaterialApp(
+      builder: (context, _) {
+        final preset = ThemeController.instance.preset;
+        final darkTheme = switch (preset) {
+          TondroThemePreset.amoled => AppTheme.amoled(),
+          TondroThemePreset.ocean => AppTheme.ocean(),
+          _ => AppTheme.dark(),
+        };
+        return MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'تندرو',
         locale: const Locale('fa'),
@@ -34,13 +41,14 @@ class TondroApp extends StatelessWidget {
           GlobalCupertinoLocalizations.delegate,
         ],
         theme: AppTheme.light(),
-        darkTheme: AppTheme.dark(),
+        darkTheme: darkTheme,
         themeMode: ThemeController.instance.mode,
         home: const Directionality(
           textDirection: TextDirection.rtl,
           child: HomePage(),
         ),
-      ),
+      );
+      },
     );
   }
 }
