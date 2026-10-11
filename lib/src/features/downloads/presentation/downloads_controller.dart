@@ -78,6 +78,45 @@ class DownloadsController extends ChangeNotifier {
   DownloadSettings get settings => _settings;
   List<SiteProfile> get siteProfiles => List.unmodifiable(_siteProfiles);
 
+  int get _effectiveMaxConcurrent =>
+      _settings.sequentialDownloads ? 1 : _settings.maxConcurrentDownloads;
+
+  List<DownloadItem> _readyQueuedItems() {
+    final now = DateTime.now();
+    final ready = _items
+        .where(
+          (item) =>
+              item.status == DownloadStatus.queued &&
+              (item.scheduledAt == null || !item.scheduledAt!.isAfter(now)),
+        )
+        .toList()
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    return ready;
+  }
+
+  bool _hasRunningDownload() =>
+      _items.any((item) => item.status == DownloadStatus.downloading) ||
+      _segmentedActive.isNotEmpty ||
+      _throttledActive.isNotEmpty;
+
+  bool _isSequentialTurn(DownloadItem item) {
+    if (!_settings.sequentialDownloads) return true;
+    if (_hasRunningDownload()) return false;
+    final ready = _readyQueuedItems();
+    return ready.isNotEmpty && ready.first.id == item.id;
+  }
+
+  Future<void> _kickQueue() async {
+    if (_settings.sequentialDownloads) {
+      final ready = _readyQueuedItems();
+      if (ready.isEmpty || _hasRunningDownload()) return;
+      await _enqueue(ready.first);
+      return;
+    }
+    await _enqueueReadyItems();
+  }
+
+
   Future<void> init() async {
     _settings = await _settingsStore.load();
     _siteProfiles
@@ -98,13 +137,13 @@ class DownloadsController extends ChangeNotifier {
       }));
 
     await _service.init(
-      maxConcurrent: _settings.maxConcurrentDownloads,
+      maxConcurrent: _effectiveMaxConcurrent,
       notifications: _settings.notifications,
       onStatus: _handleStatusUpdate,
       onProgress: _handleProgressUpdate,
     );
     await _service.updateRuntimeSettings(
-      maxConcurrent: _settings.maxConcurrentDownloads,
+      maxConcurrent: _effectiveMaxConcurrent,
       wifiOnly: _settings.wifiOnly,
     );
     await _service.configureNotifications(
@@ -522,12 +561,9 @@ class DownloadsController extends ChangeNotifier {
     return candidate;
   }
   Future<void> _enqueueReadyItems() async {
-    for (final item in _items) {
-      if (item.status != DownloadStatus.queued) continue;
-      if (item.scheduledAt != null &&
-          item.scheduledAt!.isAfter(DateTime.now())) {
-        continue;
-      }
+    final ready = _readyQueuedItems();
+    final items = _settings.sequentialDownloads ? ready.take(1) : ready;
+    for (final item in items) {
       await _enqueue(item);
     }
   }
@@ -558,6 +594,7 @@ class DownloadsController extends ChangeNotifier {
   }
 
   Future<void> _enqueue(DownloadItem item) async {
+    if (!_isSequentialTurn(item)) return;
     if (await _service.hasTask(item.id)) return;
 
     if (_settings.notifications) {
@@ -583,17 +620,24 @@ class DownloadsController extends ChangeNotifier {
     if (_settings.speedLimitKbps > 0) return;
     if (_settings.wifiOnly && !_service.isWiFi) return;
 
-    final available =
-        _settings.maxConcurrentDownloads - _segmentedActive.length;
+    if (_settings.sequentialDownloads) {
+      if (_hasRunningDownload()) return;
+      final ready = _readyQueuedItems();
+      if (ready.isEmpty) return;
+      final item = ready.first;
+      if (_speedLimitFor(item) > 0 || _segmentsFor(item) <= 1) return;
+      unawaited(_runSegmented(item.id));
+      return;
+    }
+
+    final available = _effectiveMaxConcurrent - _segmentedActive.length;
     if (available <= 0) return;
 
-    final now = DateTime.now();
-    final ready = _items.where((item) {
-      if (item.status != DownloadStatus.queued) return false;
+    final ready = _readyQueuedItems().where((item) {
       if (_speedLimitFor(item) > 0) return false;
       if (_segmentsFor(item) <= 1) return false;
       if (_segmentedActive.contains(item.id)) return false;
-      return item.scheduledAt == null || !item.scheduledAt!.isAfter(now);
+      return true;
     }).take(available).toList();
 
     for (final item in ready) {
@@ -685,6 +729,8 @@ class DownloadsController extends ChangeNotifier {
           retries: _settings.autoRetry,
           headers: _headersFor(_items[currentIndex]),
         );
+      } else if (_settings.sequentialDownloads) {
+        unawaited(_kickQueue());
       } else {
         _pumpSegmentedQueue();
       }
@@ -693,16 +739,24 @@ class DownloadsController extends ChangeNotifier {
 
   void _pumpThrottledQueue() {
     if (_settings.wifiOnly && !_service.isWiFi) return;
-    final available =
-        _settings.maxConcurrentDownloads - _throttledActive.length;
+
+    if (_settings.sequentialDownloads) {
+      if (_hasRunningDownload()) return;
+      final ready = _readyQueuedItems();
+      if (ready.isEmpty) return;
+      final item = ready.first;
+      if (_speedLimitFor(item) <= 0) return;
+      unawaited(_runThrottled(item.id));
+      return;
+    }
+
+    final available = _effectiveMaxConcurrent - _throttledActive.length;
     if (available <= 0) return;
 
-    final now = DateTime.now();
-    final ready = _items.where((item) {
-      if (item.status != DownloadStatus.queued) return false;
+    final ready = _readyQueuedItems().where((item) {
       if (_speedLimitFor(item) <= 0) return false;
       if (_throttledActive.contains(item.id)) return false;
-      return item.scheduledAt == null || !item.scheduledAt!.isAfter(now);
+      return true;
     }).take(available).toList();
 
     for (final item in ready) {
@@ -778,7 +832,11 @@ class DownloadsController extends ChangeNotifier {
       notifyListeners();
     _scheduleWidgetUpdate();
       await _persist();
-      _pumpThrottledQueue();
+      if (_settings.sequentialDownloads) {
+        unawaited(_kickQueue());
+      } else {
+        _pumpThrottledQueue();
+      }
     }
   }
 
@@ -824,6 +882,12 @@ class DownloadsController extends ChangeNotifier {
     unawaited(_persist());
     if (status == DownloadStatus.completed) {
       unawaited(_onDownloadCompleted(current.id));
+    }
+    if (_settings.sequentialDownloads &&
+        (status == DownloadStatus.completed ||
+            status == DownloadStatus.failed ||
+            status == DownloadStatus.paused)) {
+      unawaited(_kickQueue());
     }
   }
 
@@ -875,6 +939,9 @@ class DownloadsController extends ChangeNotifier {
       notifyListeners();
     _scheduleWidgetUpdate();
       await _persist();
+      if (_settings.sequentialDownloads) {
+        unawaited(_kickQueue());
+      }
       return;
     }
 
@@ -887,10 +954,16 @@ class DownloadsController extends ChangeNotifier {
       notifyListeners();
     _scheduleWidgetUpdate();
       await _persist();
+      if (_settings.sequentialDownloads) {
+        unawaited(_kickQueue());
+      }
       return;
     }
 
     await _service.pause(id);
+    if (_settings.sequentialDownloads) {
+      unawaited(_kickQueue());
+    }
   }
 
   Future<void> start(String id) async {
@@ -1006,7 +1079,9 @@ class DownloadsController extends ChangeNotifier {
   Future<void> updateSettings(DownloadSettings value) async {
     final speedChanged = _settings.speedLimitKbps != value.speedLimitKbps;
     final segmentsChanged = _settings.maxSegments != value.maxSegments;
-    if (speedChanged || segmentsChanged) {
+    final queueModeChanged =
+        _settings.sequentialDownloads != value.sequentialDownloads;
+    if (speedChanged || segmentsChanged || queueModeChanged) {
       for (final id in _segmentedActive.toList()) {
         _segmentedService.pause(id);
       }
@@ -1035,14 +1110,17 @@ class DownloadsController extends ChangeNotifier {
       showComplete: value.completionAction != CompletionAction.none,
     );
     await _service.updateRuntimeSettings(
-      maxConcurrent: value.maxConcurrentDownloads,
+      maxConcurrent:
+          value.sequentialDownloads ? 1 : value.maxConcurrentDownloads,
       wifiOnly: value.wifiOnly,
     );
     notifyListeners();
     _scheduleWidgetUpdate();
     await _persist();
 
-    if (value.speedLimitKbps > 0) {
+    if (value.sequentialDownloads) {
+      await _kickQueue();
+    } else if (value.speedLimitKbps > 0) {
       _pumpThrottledQueue();
     } else if (value.maxSegments > 1) {
       _pumpSegmentedQueue();
@@ -1111,7 +1189,7 @@ class DownloadsController extends ChangeNotifier {
       showComplete: _settings.completionAction != CompletionAction.none,
     );
     await _service.updateRuntimeSettings(
-      maxConcurrent: _settings.maxConcurrentDownloads,
+      maxConcurrent: _effectiveMaxConcurrent,
       wifiOnly: _settings.wifiOnly,
     );
     notifyListeners();
