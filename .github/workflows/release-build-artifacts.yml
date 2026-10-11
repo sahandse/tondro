@@ -1,0 +1,63 @@
+name: Release Build Artifacts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/release-build-artifacts.yml
+  workflow_dispatch:
+
+concurrency:
+  group: release-build-artifacts
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generate Android
+        run: bash tool/bootstrap_android.sh
+
+      - name: Get packages
+        run: flutter pub get
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Build release AAB
+        run: flutter build appbundle --release
+
+      - name: Prepare
+        shell: bash
+        run: |
+          VERSION="$(awk '/^version:/ {print $2}' pubspec.yaml)"
+          NAME="${VERSION%%+*}"
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/Tondro-${NAME}-unsigned-release.apk"
+          cp build/app/outputs/bundle/release/app-release.aab "dist/Tondro-${NAME}-unsigned-release.aab"
+          sha256sum dist/* > dist/BUILD-SHA256SUMS.txt
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tondro-release-build-artifacts
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
