@@ -141,15 +141,15 @@ icon.write_text("""<vector xmlns:android="http://schemas.android.com/apk/res/and
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:fillColor="#08152E" android:pathData="M0,0h108v108h-108z"/>
+    <path android:fillColor="#0B0D0F" android:pathData="M0,0h108v108h-108z"/>
     <path
-        android:fillColor="#54E6FF"
+        android:fillColor="#A8FF3E"
         android:pathData="M47,18h14v39h14L54,80L33,57h14z"/>
     <path
-        android:fillColor="#1785FF"
+        android:fillColor="#7ED321"
         android:pathData="M54,80L75,57H61v-8L54,56z"/>
     <path
-        android:fillColor="#2356F6"
+        android:fillColor="#5A9E18"
         android:pathData="M34,88h40a5,5 0 0,1 0,10H34a5,5 0 0,1 0,-10z"/>
 </vector>
 """, encoding="utf-8")
@@ -158,7 +158,7 @@ launch = Path("android/app/src/main/res/drawable/launch_background.xml")
 if launch.exists():
     launch.write_text("""<?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="#08152E" />
+    <item android:drawable="#0B0D0F" />
     <item
         android:width="96dp"
         android:height="96dp"
@@ -170,9 +170,9 @@ if launch.exists():
 widget_bg = Path("android/app/src/main/res/drawable/tondro_widget_bg.xml")
 widget_bg.write_text("""<?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="#111111" />
+    <solid android:color="#121518" />
     <corners android:radius="18dp" />
-    <stroke android:width="1dp" android:color="#333333" />
+    <stroke android:width="1dp" android:color="#272D28" />
     <padding android:left="14dp" android:top="12dp" android:right="14dp" android:bottom="12dp" />
 </shape>
 """, encoding="utf-8")
@@ -207,7 +207,7 @@ layout.write_text("""<?xml version="1.0" encoding="utf-8"?>
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="0 KB/s"
-            android:textColor="#68B5FF"
+            android:textColor="#A8FF3E"
             android:textSize="13sp"
             android:textStyle="bold" />
     </LinearLayout>
