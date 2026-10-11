@@ -414,6 +414,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               const SizedBox(height: 8),
                           itemBuilder: (context, index) => _DownloadCard(
                             item: items[index],
+                            queuePosition:
+                                _controller.queuePosition(items[index].id),
                             locale: Localizations.localeOf(context),
                             onOpen: () async {
                               HapticFeedback.selectionClick();
@@ -700,6 +702,9 @@ class _DownloadCard extends StatelessWidget {
     final status = _statusLabel(item.status);
     if (item.scheduledAt != null && item.scheduledAt!.isAfter(DateTime.now())) {
       return 'زمان‌بندی • ${formatDownloadDateTime(item.scheduledAt!, locale: locale)}';
+    }
+    if (item.status == DownloadStatus.queued && queuePosition != null) {
+      return 'نوبت $queuePosition • $status';
     }
     if (item.status != DownloadStatus.downloading) return status;
     final speed = _formatSpeed(item.speedBytesPerSecond);
