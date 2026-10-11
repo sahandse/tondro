@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
+import '../../../app/widgets/tondro_brand.dart';
+
 import '../../browser/domain/media_detector.dart';
 import '../../browser/presentation/browser_page.dart';
 import '../../downloads/domain/download_category.dart';
@@ -234,9 +236,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 16,
-        title: const Text(
-          'تندرو',
-          style: TextStyle(fontWeight: FontWeight.w900),
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TondroLogo(size: 28),
+            SizedBox(width: 9),
+            Text(
+              'تندرو',
+              style: TextStyle(fontWeight: FontWeight.w900),
+            ),
+          ],
         ),
         actions: [
           IconButton(
