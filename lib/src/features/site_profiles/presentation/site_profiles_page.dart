@@ -195,56 +195,83 @@ class _SiteProfilesPageState extends State<SiteProfilesPage> {
   @override
   Widget build(BuildContext context) {
     final profiles = widget.controller.siteProfiles;
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Row(
-          children: [
-            TondroLogo(size: 32),
-            SizedBox(width: 10),
-            Text('پروفایل سایت‌ها'),
-          ],
-        ),
+        title: const Text('پروفایل سایت‌ها'),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _edit(),
         child: const Icon(Icons.add_rounded),
       ),
       body: profiles.isEmpty
-          ? const Center(
+          ? Center(
               child: Padding(
-                padding: EdgeInsets.all(28),
-                child: Text(
-                  'هنوز پروفایلی ساخته نشده.\nبرای سایت‌هایی که Header یا تنظیمات خاص می‌خواهند پروفایل بساز.',
-                  textAlign: TextAlign.center,
+                padding: const EdgeInsets.all(28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.language_rounded,
+                      size: 42,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'هنوز پروفایلی ساخته نشده.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'فقط برای سایت‌هایی که Header یا Cookie خاص می‌خواهند پروفایل بساز.',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             )
           : ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 96),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
               itemCount: profiles.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              separatorBuilder: (_, __) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final profile = profiles[index];
-                return XpWindowFrame(
-                  title: profile.host,
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.language_rounded),
-                    title: Text(profile.host),
-                    subtitle: Text(
-                      '${profile.maxSegments ?? 4} بخش'
-                      '${profile.folderName == null ? '' : ' • ${profile.folderName}'}',
-                    ),
-                    onTap: () => _edit(profile),
-                    trailing: IconButton(
-                      tooltip: 'حذف',
-                      onPressed: () async {
+                return ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 4,
+                  ),
+                  leading: const Icon(Icons.language_rounded),
+                  title: Text(profile.host),
+                  subtitle: Text(
+                    '${profile.maxSegments ?? 4} اتصال'
+                    '${profile.folderName == null ? '' : ' • ${profile.folderName}'}',
+                  ),
+                  onTap: () => _edit(profile),
+                  trailing: PopupMenuButton<String>(
+                    onSelected: (value) async {
+                      if (value == 'edit') {
+                        await _edit(profile);
+                      }
+                      if (value == 'delete') {
                         await widget.controller.deleteSiteProfile(profile.id);
                         if (mounted) setState(() {});
-                      },
-                      icon: const Icon(Icons.delete_outline_rounded),
-                    ),
+                      }
+                    },
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Text('ویرایش'),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Text('حذف'),
+                      ),
+                    ],
                   ),
                 );
               },
