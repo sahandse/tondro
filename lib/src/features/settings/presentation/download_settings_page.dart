@@ -27,7 +27,7 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('تنظیمات')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 6, 16, 32),
         children: [
           _SettingsGroup(
             title: 'اصلی',
@@ -383,7 +383,7 @@ class _SettingsGroup extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: theme.colorScheme.outline.withValues(alpha: .45),
             ),
