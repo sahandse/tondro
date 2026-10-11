@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const accent = Color(0xFFB6FF5A);
-  static const accentDeep = Color(0xFF86D92E);
+  static const accent = Color(0xFF42CFFF);
+  static const accentDeep = Color(0xFF168AF5);
 
   static ThemeData light() => _build(Brightness.light);
   static ThemeData dark() => _build(Brightness.dark);
@@ -19,14 +19,14 @@ class AppTheme {
     final accentColor = ocean ? const Color(0xFF4DB8FF) : accent;
     final accentLight = ocean ? const Color(0xFF90D6FF) : accent;
     final darkPrimary = ocean ? const Color(0xFF4DB8FF) : accent;
-    final lightPrimary = ocean ? const Color(0xFF1769AA) : const Color(0xFF4F7A00);
+    final lightPrimary = ocean ? const Color(0xFF1769AA) : const Color(0xFF137DEB);
     final background = amoled
         ? Colors.black
         : ocean
             ? const Color(0xFF07111C)
             : dark
                 ? const Color(0xFF0A0C0E)
-                : const Color(0xFFF4F5F2);
+                : const Color(0xFFF5FAFF);
     final surface = amoled
         ? const Color(0xFF050505)
         : ocean
@@ -40,13 +40,13 @@ class AppTheme {
             ? const Color(0xFF14263A)
             : dark
                 ? const Color(0xFF181C20)
-                : const Color(0xFFE9ECE6);
+                : const Color(0xFFEAF5FF);
     final foreground =
-        dark ? const Color(0xFFF3F5F2) : const Color(0xFF151815);
+        dark ? const Color(0xFFF3F5F2) : const Color(0xFF152B46);
     final muted =
-        dark ? const Color(0xFF8A9289) : const Color(0xFF677066);
+        dark ? const Color(0xFF8A9289) : const Color(0xFF657D99);
     final border =
-        dark ? const Color(0xFF272D28) : const Color(0xFFD7DDD4);
+        dark ? const Color(0xFF272D28) : const Color(0xFFD8E9F8);
 
     final scheme = ColorScheme(
       brightness: brightness,
@@ -70,10 +70,10 @@ class AppTheme {
       onInverseSurface: background,
       inversePrimary: accentColor,
       primaryContainer:
-          dark ? const Color(0xFF1D2A12) : const Color(0xFFE8F6D3),
+          dark ? const Color(0xFF1D2A12) : const Color(0xFFE2F4FF),
       onPrimaryContainer: foreground,
       secondaryContainer:
-          dark ? const Color(0xFF1D2A12) : const Color(0xFFE8F6D3),
+          dark ? const Color(0xFF1D2A12) : const Color(0xFFE2F4FF),
       onSecondaryContainer: foreground,
       tertiaryContainer:
           dark ? const Color(0xFF232824) : const Color(0xFFE9ECE8),
@@ -125,7 +125,7 @@ class AppTheme {
             (states) => states.contains(WidgetState.selected)
                 ? (dark
                     ? const Color(0xFF202A18)
-                    : const Color(0xFFE7F3D6))
+                    : const Color(0xFFE2F4FF))
                 : surface,
           ),
           foregroundColor: WidgetStateProperty.resolveWith(
