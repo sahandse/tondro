@@ -325,42 +325,92 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-              child: Row(
-                children: [
-                  Container(
-                    width: 9,
-                    height: 9,
-                    decoration: BoxDecoration(
-                      color: activeCount > 0
-                          ? theme.colorScheme.secondary
-                          : theme.colorScheme.outline,
-                      shape: BoxShape.circle,
-                    ),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: theme.colorScheme.outline.withValues(alpha: .55),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      activeCount > 0
-                          ? '$activeCount دانلود فعال'
-                          : queuedCount > 0
-                              ? '$queuedCount دانلود در صف'
-                              : 'آماده برای دانلود',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: (activeCount > 0
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.surfaceContainerHighest)
+                            .withValues(alpha: activeCount > 0 ? .16 : 1),
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      child: Icon(
+                        activeCount > 0
+                            ? Icons.downloading_rounded
+                            : queuedCount > 0
+                                ? Icons.schedule_rounded
+                                : Icons.check_circle_outline_rounded,
+                        size: 19,
+                        color: activeCount > 0
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
-                  ),
-                  if (totalSpeed > 0)
-                    Text(
-                      _formatTotalSpeed(totalSpeed),
-                      textDirection: TextDirection.ltr,
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: theme.colorScheme.secondary,
-                        fontWeight: FontWeight.w800,
+                    const SizedBox(width: 11),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            activeCount > 0
+                                ? '$activeCount دانلود فعال'
+                                : queuedCount > 0
+                                    ? '$queuedCount دانلود در صف'
+                                    : 'همه‌چیز آماده است',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            activeCount > 0
+                                ? 'دانلودها در حال انجام هستند'
+                                : queuedCount > 0
+                                    ? 'فایل‌ها به‌ترتیب شروع می‌شوند'
+                                    : 'برای شروع روی + بزن',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-
-                ],
+                    if (totalSpeed > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          _formatTotalSpeed(totalSpeed),
+                          textDirection: TextDirection.ltr,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
             Padding(
@@ -501,7 +551,7 @@ class _EmptyDownloads extends StatelessWidget {
               height: 96,
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(24),
                 border: Border.all(color: theme.colorScheme.outline),
               ),
               child: Icon(
@@ -573,14 +623,14 @@ class _DownloadCard extends StatelessWidget {
 
     return Material(
       color: theme.colorScheme.surface,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: isDone ? onOpen : null,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(12, 12, 8, 10),
+          padding: const EdgeInsets.fromLTRB(12, 12, 6, 11),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: statusColor.withValues(alpha: .22),
             ),
@@ -593,7 +643,7 @@ class _DownloadCard extends StatelessWidget {
                 height: 40,
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: .13),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(11),
                 ),
                 child: Icon(
                   _downloadTypeIcon(
@@ -655,7 +705,7 @@ class _DownloadCard extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               if (!isDone && !failed)
-                IconButton(
+                IconButton.filledTonal(
                   tooltip: isRunning ? 'توقف' : 'ادامه',
                   visualDensity: VisualDensity.compact,
                   onPressed: isRunning ? onPause : onResume,
