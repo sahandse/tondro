@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:persian_datetime_picker/persian_datetime_picker.dart';
 
 import 'downloads_controller.dart';
 
@@ -21,6 +22,7 @@ class _BatchDownloadPageState extends State<BatchDownloadPage> {
   final TextEditingController _links = TextEditingController();
   final TextEditingController _folder = TextEditingController();
   bool _working = false;
+  DateTime? _scheduledAt;
 
   @override
   void dispose() {
@@ -62,6 +64,7 @@ class _BatchDownloadPageState extends State<BatchDownloadPage> {
         customFolder: _folder.text.trim().isEmpty
             ? null
             : _folder.text.trim(),
+        scheduledAt: _scheduledAt,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -79,6 +82,63 @@ class _BatchDownloadPageState extends State<BatchDownloadPage> {
     }
   }
 
+  Future<void> _pickSchedule() async {
+    final now = DateTime.now();
+    final languageCode = Localizations.localeOf(context).languageCode;
+    DateTime? date;
+
+    if (languageCode == 'fa') {
+      final picked = await showPersianDatePicker(
+        context: context,
+        initialDate: Jalali.fromDateTime(_scheduledAt ?? now),
+        firstDate: Jalali.fromDateTime(now),
+        lastDate: Jalali.fromDateTime(
+          now.add(const Duration(days: 365)),
+        ),
+        initialEntryMode: PersianDatePickerEntryMode.calendarOnly,
+      );
+      date = picked?.toDateTime();
+    } else {
+      date = await showDatePicker(
+        context: context,
+        initialDate: _scheduledAt ?? now,
+        firstDate: now,
+        lastDate: now.add(const Duration(days: 365)),
+      );
+    }
+
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(
+        _scheduledAt ?? now.add(const Duration(minutes: 5)),
+      ),
+    );
+    if (time == null) return;
+
+    setState(() {
+      _scheduledAt = DateTime(
+        date!.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+      );
+    });
+  }
+
+  String _scheduleLabel() {
+    final value = _scheduledAt;
+    if (value == null) return 'شروع فوری';
+    final h = value.hour.toString().padLeft(2, '0');
+    final m = value.minute.toString().padLeft(2, '0');
+    final locale = Localizations.localeOf(context).languageCode;
+    if (locale == 'fa') {
+      final jalali = Jalali.fromDateTime(value);
+      return 'شروع ${jalali.year}/${jalali.month}/${jalali.day} - $h:$m';
+    }
+    return 'شروع ${value.year}/${value.month}/${value.day} - $h:$m';
+  }
   @override
   Widget build(BuildContext context) {
     final count = _extractLinks(_links.text).length;
@@ -114,6 +174,34 @@ class _BatchDownloadPageState extends State<BatchDownloadPage> {
               prefixIcon: Icon(Icons.folder_outlined),
             ),
           ),
+          const SizedBox(height: 12),
+          SwitchListTile.adaptive(
+            contentPadding: EdgeInsets.zero,
+            value: widget.controller.settings.sequentialDownloads,
+            title: const Text('دانلود نوبتی'),
+            subtitle: const Text('لینک‌ها به ترتیب، یکی‌یکی دانلود شوند.'),
+            secondary: const Icon(Icons.format_list_numbered_rounded),
+            onChanged: (value) async {
+              await widget.controller.updateSettings(
+                widget.controller.settings.copyWith(
+                  sequentialDownloads: value,
+                ),
+              );
+              if (mounted) setState(() {});
+            },
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: _pickSchedule,
+            icon: const Icon(Icons.schedule_rounded),
+            label: Text(_scheduleLabel()),
+          ),
+          if (_scheduledAt != null)
+            TextButton.icon(
+              onPressed: () => setState(() => _scheduledAt = null),
+              icon: const Icon(Icons.restart_alt_rounded),
+              label: const Text('شروع فوری'),
+            ),
           const SizedBox(height: 18),
           FilledButton.icon(
             onPressed: count == 0 || _working ? null : _submit,
