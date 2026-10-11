@@ -67,6 +67,20 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
                 },
               ),
               SwitchListTile.adaptive(
+                value: settings.sequentialDownloads,
+                title: const Text('دانلود نوبتی'),
+                subtitle: const Text(
+                  'فایل‌ها به ترتیب اضافه‌شدن، یکی‌یکی دانلود شوند.',
+                ),
+                secondary: const Icon(Icons.format_list_numbered_rounded),
+                onChanged: (value) async {
+                  await widget.controller.updateSettings(
+                    settings.copyWith(sequentialDownloads: value),
+                  );
+                  if (mounted) setState(() {});
+                },
+              ),
+              SwitchListTile.adaptive(
                 value: settings.clipboardDetection,
                 title: const Text('تشخیص لینک کپی‌شده'),
                 onChanged: (value) async {
@@ -125,7 +139,9 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
                 subtitle: const Text('اتصال، Segment، Retry و سرعت'),
                 children: [
                   _NumberSetting(
-                    title: 'دانلود هم‌زمان',
+                    title: settings.sequentialDownloads
+                        ? 'دانلود هم‌زمان (در حالت نوبتی: ۱)'
+                        : 'دانلود هم‌زمان',
                     value: settings.maxConcurrentDownloads,
                     values: const [1, 2, 3, 4, 5],
                     onChanged: (value) async {
@@ -256,30 +272,38 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
                 leading: const Icon(Icons.palette_outlined),
                 title: const Text('ظاهر برنامه'),
                 children: [
-                  RadioGroup<ThemeMode>(
-                    groupValue: ThemeController.instance.mode,
+                  RadioGroup<TondroThemePreset>(
+                    groupValue: ThemeController.instance.preset,
                     onChanged: (value) async {
                       if (value == null) return;
-                      await ThemeController.instance.setMode(value);
+                      await ThemeController.instance.setPreset(value);
                       if (mounted) setState(() {});
                     },
-                    child: const Column(
-                      children: [
-                        RadioListTile<ThemeMode>(
-                          value: ThemeMode.system,
-                          title: Text('سیستم'),
-                        ),
-                        RadioListTile<ThemeMode>(
-                          value: ThemeMode.light,
-                          title: Text('روشن'),
-                        ),
-                        RadioListTile<ThemeMode>(
-                          value: ThemeMode.dark,
-                          title: Text('تیره'),
-                        ),
-                      ],
+                    child: Column(
+                      children: TondroThemePreset.values
+                          .map(
+                            (preset) => RadioListTile<TondroThemePreset>(
+                              value: preset,
+                              title: Text(tondroThemeLabelFa(preset)),
+                              secondary: Icon(
+                                switch (preset) {
+                                  TondroThemePreset.system =>
+                                    Icons.brightness_auto_rounded,
+                                  TondroThemePreset.light =>
+                                    Icons.light_mode_rounded,
+                                  TondroThemePreset.dark =>
+                                    Icons.dark_mode_rounded,
+                                  TondroThemePreset.amoled =>
+                                    Icons.brightness_2_rounded,
+                                  TondroThemePreset.ocean =>
+                                    Icons.water_drop_outlined,
+                                },
+                              ),
+                            ),
+                          )
+                          .toList(),
                     ),
-                  ),
+                  )
                 ],
               ),
               ListTile(
