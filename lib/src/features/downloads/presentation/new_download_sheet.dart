@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:persian_datetime_picker/persian_datetime_picker.dart';
 
 import '../../../app/widgets/tondro_brand.dart';
 import '../domain/download_inspection.dart';
@@ -96,12 +97,29 @@ class _NewDownloadSheetState extends State<NewDownloadSheet> {
 
   Future<void> _pickSchedule() async {
     final now = DateTime.now();
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _scheduledAt ?? now,
-      firstDate: now,
-      lastDate: now.add(const Duration(days: 365)),
-    );
+    final languageCode = Localizations.localeOf(context).languageCode;
+    DateTime? date;
+
+    if (languageCode == 'fa') {
+      final picked = await showPersianDatePicker(
+        context: context,
+        initialDate: Jalali.fromDateTime(_scheduledAt ?? now),
+        firstDate: Jalali.fromDateTime(now),
+        lastDate: Jalali.fromDateTime(
+          now.add(const Duration(days: 365)),
+        ),
+        initialEntryMode: PersianDatePickerEntryMode.calendarOnly,
+      );
+      date = picked?.toDateTime();
+    } else {
+      date = await showDatePicker(
+        context: context,
+        initialDate: _scheduledAt ?? now,
+        firstDate: now,
+        lastDate: now.add(const Duration(days: 365)),
+      );
+    }
+
     if (date == null || !mounted) return;
     final time = await showTimePicker(
       context: context,
@@ -110,9 +128,10 @@ class _NewDownloadSheetState extends State<NewDownloadSheet> {
       ),
     );
     if (time == null) return;
+
     setState(() {
       _scheduledAt = DateTime(
-        date.year,
+        date!.year,
         date.month,
         date.day,
         time.hour,
@@ -328,7 +347,7 @@ class _NewDownloadSheetState extends State<NewDownloadSheet> {
                 label: Text(
                   _scheduledAt == null
                       ? 'زمان‌بندی دانلود'
-                      : 'شروع در ${formatDownloadDateTime(_scheduledAt!)}',
+                      : 'شروع در ${formatDownloadDateTime(_scheduledAt!, locale: Localizations.localeOf(context))}',
                 ),
               ),
               if (_scheduledAt != null)
@@ -376,8 +395,33 @@ class _NewDownloadSheetState extends State<NewDownloadSheet> {
   }
 }
 
-String formatDownloadDateTime(DateTime dateTime) {
+String formatDownloadDateTime(
+  DateTime dateTime, {
+  required Locale locale,
+}) {
   final h = dateTime.hour.toString().padLeft(2, '0');
   final m = dateTime.minute.toString().padLeft(2, '0');
-  return '${dateTime.year}/${dateTime.month}/${dateTime.day} - $h:$m';
+
+  if (locale.languageCode == 'fa') {
+    final jalali = Jalali.fromDateTime(dateTime);
+    final value =
+        '${jalali.year.toString().padLeft(4, '0')}/'
+        '${jalali.month.toString().padLeft(2, '0')}/'
+        '${jalali.day.toString().padLeft(2, '0')} - $h:$m';
+    return _toPersianDigits(value);
+  }
+
+  return '${dateTime.year.toString().padLeft(4, '0')}/'
+      '${dateTime.month.toString().padLeft(2, '0')}/'
+      '${dateTime.day.toString().padLeft(2, '0')} - $h:$m';
+}
+
+String _toPersianDigits(String value) {
+  const english = '0123456789';
+  const persian = '۰۱۲۳۴۵۶۷۸۹';
+  var result = value;
+  for (var index = 0; index < english.length; index++) {
+    result = result.replaceAll(english[index], persian[index]);
+  }
+  return result;
 }
