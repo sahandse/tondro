@@ -7,15 +7,40 @@ class AppTheme {
 
   static ThemeData light() => _build(Brightness.light);
   static ThemeData dark() => _build(Brightness.dark);
+  static ThemeData amoled() => _build(Brightness.dark, amoled: true);
+  static ThemeData ocean() => _build(Brightness.dark, ocean: true);
 
-  static ThemeData _build(Brightness brightness) {
+  static ThemeData _build(
+    Brightness brightness, {
+    bool amoled = false,
+    bool ocean = false,
+  }) {
     final dark = brightness == Brightness.dark;
-    final background =
-        dark ? const Color(0xFF0B0D0F) : const Color(0xFFF4F5F2);
-    final surface =
-        dark ? const Color(0xFF121518) : const Color(0xFFFFFFFF);
-    final elevated =
-        dark ? const Color(0xFF181C20) : const Color(0xFFE9ECE6);
+    final accentColor = ocean ? const Color(0xFF4DB8FF) : accent;
+    final accentLight = ocean ? const Color(0xFF90D6FF) : accent;
+    final darkPrimary = ocean ? const Color(0xFF4DB8FF) : accent;
+    final lightPrimary = ocean ? const Color(0xFF1769AA) : const Color(0xFF4F7A00);
+    final background = amoled
+        ? Colors.black
+        : ocean
+            ? const Color(0xFF07111C)
+            : dark
+                ? const Color(0xFF0B0D0F)
+                : const Color(0xFFF4F5F2);
+    final surface = amoled
+        ? const Color(0xFF050505)
+        : ocean
+            ? const Color(0xFF0D1B2A)
+            : dark
+                ? const Color(0xFF121518)
+                : const Color(0xFFFFFFFF);
+    final elevated = amoled
+        ? const Color(0xFF101010)
+        : ocean
+            ? const Color(0xFF14263A)
+            : dark
+                ? const Color(0xFF181C20)
+                : const Color(0xFFE9ECE6);
     final foreground =
         dark ? const Color(0xFFF3F5F2) : const Color(0xFF151815);
     final muted =
@@ -25,9 +50,9 @@ class AppTheme {
 
     final scheme = ColorScheme(
       brightness: brightness,
-      primary: dark ? accent : const Color(0xFF4F7A00),
+      primary: dark ? darkPrimary : lightPrimary,
       onPrimary: dark ? const Color(0xFF101510) : Colors.white,
-      secondary: dark ? accent : const Color(0xFF4F7A00),
+      secondary: dark ? darkPrimary : lightPrimary,
       onSecondary: dark ? const Color(0xFF101510) : Colors.white,
       tertiary: const Color(0xFF9AA39A),
       onTertiary: foreground,
@@ -43,7 +68,7 @@ class AppTheme {
       scrim: Colors.black,
       inverseSurface: foreground,
       onInverseSurface: background,
-      inversePrimary: accent,
+      inversePrimary: accentColor,
       primaryContainer:
           dark ? const Color(0xFF1D2A12) : const Color(0xFFE8F6D3),
       onPrimaryContainer: foreground,
@@ -105,7 +130,7 @@ class AppTheme {
           ),
           foregroundColor: WidgetStateProperty.resolveWith(
             (states) => states.contains(WidgetState.selected)
-                ? (dark ? accent : const Color(0xFF4F7A00))
+                ? (dark ? darkPrimary : lightPrimary)
                 : muted,
           ),
           side: WidgetStateProperty.all(BorderSide(color: border)),
@@ -117,7 +142,7 @@ class AppTheme {
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: dark ? accent : const Color(0xFF4F7A00),
+        backgroundColor: dark ? darkPrimary : lightPrimary,
         foregroundColor: dark ? const Color(0xFF111511) : Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -138,7 +163,7 @@ class AppTheme {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(
-            color: dark ? accent : const Color(0xFF4F7A00),
+            color: dark ? darkPrimary : lightPrimary,
             width: 1.4,
           ),
         ),
@@ -149,7 +174,7 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: dark ? accent : const Color(0xFF4F7A00),
+          backgroundColor: dark ? darkPrimary : lightPrimary,
           foregroundColor: dark ? const Color(0xFF111511) : Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
@@ -172,7 +197,7 @@ class AppTheme {
         ),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: dark ? accent : const Color(0xFF4F7A00),
+        color: dark ? darkPrimary : lightPrimary,
         linearTrackColor: elevated,
       ),
       bottomSheetTheme: BottomSheetThemeData(
@@ -203,7 +228,7 @@ class AppTheme {
         backgroundColor:
             dark ? const Color(0xFF181D19) : const Color(0xFF182018),
         contentTextStyle: baseText.bodyMedium?.copyWith(color: Colors.white),
-        actionTextColor: accent,
+        actionTextColor: accentLight,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
@@ -217,7 +242,7 @@ class AppTheme {
         ),
         trackColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)
-              ? (dark ? accent : const Color(0xFF4F7A00))
+              ? (dark ? darkPrimary : lightPrimary)
               : null,
         ),
       ),
