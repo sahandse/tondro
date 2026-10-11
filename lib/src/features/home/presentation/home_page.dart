@@ -27,6 +27,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   StreamSubscription<List<SharedMediaFile>>? _shareSub;
   StreamSubscription<Uri?>? _widgetClickSub;
   String? _lastClipboardUrl;
+  String _homeFilter = 'all';
 
   @override
   void initState() {
@@ -181,13 +182,20 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
   List<DownloadItem> _visibleItems(List<DownloadItem> source) {
-    final active = source
-        .where((item) => item.status != DownloadStatus.completed)
-        .toList();
-    final recentCompleted = source
-        .where((item) => item.status == DownloadStatus.completed)
-        .toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final filtered = switch (_homeFilter) {
+      'active' => source
+          .where((item) =>
+              item.status == DownloadStatus.downloading ||
+              item.status == DownloadStatus.paused)
+          .toList(),
+      'queued' => source
+          .where((item) => item.status == DownloadStatus.queued)
+          .toList(),
+      'completed' => source
+          .where((item) => item.status == DownloadStatus.completed)
+          .toList(),
+      _ => source.toList(),
+    };
 
     int priority(DownloadStatus status) => switch (status) {
           DownloadStatus.downloading => 0,
@@ -196,16 +204,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           DownloadStatus.failed => 3,
           DownloadStatus.completed => 4,
         };
-    active.sort((a, b) {
+
+    filtered.sort((a, b) {
+      if (_homeFilter == 'completed') {
+        return b.createdAt.compareTo(a.createdAt);
+      }
       final statusOrder = priority(a.status).compareTo(priority(b.status));
       if (statusOrder != 0) return statusOrder;
       return b.createdAt.compareTo(a.createdAt);
     });
-
-    return [
-      ...active,
-      ...recentCompleted.take(5),
-    ];
+    return filtered;
   }
 
   @override
@@ -355,6 +363,45 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 ],
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: SizedBox(
+                width: double.infinity,
+                child: SegmentedButton<String>(
+                  segments: [
+                    const ButtonSegment(
+                      value: 'all',
+                      label: Text('همه'),
+                    ),
+                    const ButtonSegment(
+                      value: 'active',
+                      label: Text('فعال'),
+                    ),
+                    ButtonSegment(
+                      value: 'queued',
+                      label: Text(
+                        queuedCount > 0 ? 'در صف · $queuedCount' : 'در صف',
+                      ),
+                    ),
+                    const ButtonSegment(
+                      value: 'completed',
+                      label: Text('تمام‌شده'),
+                    ),
+                  ],
+                  selected: {_homeFilter},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (selection) {
+                    setState(() => _homeFilter = selection.first);
+                  },
+                  style: ButtonStyle(
+                    visualDensity: VisualDensity.compact,
+                    padding: WidgetStateProperty.all(
+                      const EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                  ),
+                ),
+              ),
+            ),
             Expanded(
               child: _controller.loading
                   ? const Center(child: CircularProgressIndicator())
@@ -367,6 +414,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               const SizedBox(height: 8),
                           itemBuilder: (context, index) => _DownloadCard(
                             item: items[index],
+                            locale: Localizations.localeOf(context),
                             onOpen: () async {
                               HapticFeedback.selectionClick();
                               final opened =
@@ -484,6 +532,7 @@ class _EmptyDownloads extends StatelessWidget {
 class _DownloadCard extends StatelessWidget {
   const _DownloadCard({
     required this.item,
+    required this.locale,
     required this.onOpen,
     required this.onPause,
     required this.onResume,
@@ -493,6 +542,7 @@ class _DownloadCard extends StatelessWidget {
   });
 
   final DownloadItem item;
+  final Locale locale;
   final VoidCallback onOpen;
   final VoidCallback onPause;
   final VoidCallback onResume;
@@ -506,6 +556,13 @@ class _DownloadCard extends StatelessWidget {
     final isRunning = item.status == DownloadStatus.downloading;
     final isDone = item.status == DownloadStatus.completed;
     final failed = item.status == DownloadStatus.failed;
+    final statusColor = switch (item.status) {
+      DownloadStatus.downloading => theme.colorScheme.primary,
+      DownloadStatus.queued => const Color(0xFFFFA63D),
+      DownloadStatus.paused => theme.colorScheme.tertiary,
+      DownloadStatus.completed => const Color(0xFF35C982),
+      DownloadStatus.failed => theme.colorScheme.error,
+    };
     final double? progress = item.totalBytes > 0
         ? item.progress.clamp(0, 1).toDouble()
         : null;
@@ -521,7 +578,7 @@ class _DownloadCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: theme.colorScheme.outline.withValues(alpha: .45),
+              color: statusColor.withValues(alpha: .22),
             ),
           ),
           child: Row(
@@ -531,9 +588,7 @@ class _DownloadCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: failed
-                      ? theme.colorScheme.errorContainer
-                      : theme.colorScheme.surfaceContainerHighest,
+                  color: statusColor.withValues(alpha: .13),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -543,9 +598,7 @@ class _DownloadCard extends StatelessWidget {
                     failed: failed,
                   ),
                   size: 20,
-                  color: failed
-                      ? theme.colorScheme.error
-                      : theme.colorScheme.onSurfaceVariant,
+                  color: statusColor,
                 ),
               ),
               const SizedBox(width: 11),
@@ -646,7 +699,7 @@ class _DownloadCard extends StatelessWidget {
   String _subtitle(DownloadItem item) {
     final status = _statusLabel(item.status);
     if (item.scheduledAt != null && item.scheduledAt!.isAfter(DateTime.now())) {
-      return 'زمان‌بندی • ${formatDownloadDateTime(item.scheduledAt!)}';
+      return 'زمان‌بندی • ${formatDownloadDateTime(item.scheduledAt!, locale: locale)}';
     }
     if (item.status != DownloadStatus.downloading) return status;
     final speed = _formatSpeed(item.speedBytesPerSecond);
