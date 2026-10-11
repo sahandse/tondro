@@ -65,8 +65,9 @@ class SegmentedDownloadService {
     final speedWatch = Stopwatch()..start();
 
     try {
-      await Future.wait(
-        List.generate(effectiveSegments, (index) async {
+      try {
+        await Future.wait(
+          List.generate(effectiveSegments, (index) async {
           final range = ranges[index];
           final part = partFiles[index];
           final expectedLength = range.end - range.start + 1;
@@ -125,8 +126,14 @@ class SegmentedDownloadService {
             await sink?.close();
             client.close(force: true);
           }
-        }),
-      );
+          }),
+        );
+      } catch (_) {
+        if (_canceled.contains(item.id)) {
+          throw const SegmentedDownloadCanceled();
+        }
+        rethrow;
+      }
 
       if (_canceled.contains(item.id)) {
         throw const SegmentedDownloadCanceled();
