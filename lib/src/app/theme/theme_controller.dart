@@ -1,36 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+enum TondroThemePreset {
+  system,
+  light,
+  dark,
+  amoled,
+  ocean,
+}
+
+String tondroThemeLabelFa(TondroThemePreset value) => switch (value) {
+      TondroThemePreset.system => 'سیستم',
+      TondroThemePreset.light => 'روشن',
+      TondroThemePreset.dark => 'تیره',
+      TondroThemePreset.amoled => 'AMOLED',
+      TondroThemePreset.ocean => 'آبی',
+    };
+
 class ThemeController extends ChangeNotifier {
   ThemeController._();
 
   static final ThemeController instance = ThemeController._();
-  static const _key = 'appearance.themeMode';
+  static const _key = 'appearance.themePreset';
 
-  ThemeMode _mode = ThemeMode.system;
-  ThemeMode get mode => _mode;
+  TondroThemePreset _preset = TondroThemePreset.system;
+  TondroThemePreset get preset => _preset;
+
+  ThemeMode get mode => switch (_preset) {
+        TondroThemePreset.system => ThemeMode.system,
+        TondroThemePreset.light => ThemeMode.light,
+        TondroThemePreset.dark ||
+        TondroThemePreset.amoled ||
+        TondroThemePreset.ocean =>
+          ThemeMode.dark,
+      };
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     final value = prefs.getString(_key);
-    _mode = switch (value) {
-      'light' => ThemeMode.light,
-      'dark' => ThemeMode.dark,
-      _ => ThemeMode.system,
-    };
+    _preset = TondroThemePreset.values.firstWhere(
+      (item) => item.name == value,
+      orElse: () {
+        final legacy = prefs.getString('appearance.themeMode');
+        return switch (legacy) {
+          'light' => TondroThemePreset.light,
+          'dark' => TondroThemePreset.dark,
+          _ => TondroThemePreset.system,
+        };
+      },
+    );
   }
 
-  Future<void> setMode(ThemeMode mode) async {
-    if (_mode == mode) return;
-    _mode = mode;
+  Future<void> setPreset(TondroThemePreset preset) async {
+    if (_preset == preset) return;
+    _preset = preset;
     notifyListeners();
 
     final prefs = await SharedPreferences.getInstance();
-    final value = switch (mode) {
-      ThemeMode.light => 'light',
-      ThemeMode.dark => 'dark',
-      ThemeMode.system => 'system',
-    };
-    await prefs.setString(_key, value);
+    await prefs.setString(_key, preset.name);
   }
 }
