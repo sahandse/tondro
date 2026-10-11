@@ -345,7 +345,11 @@ class _TorrentPageState extends State<TorrentPage> {
                         ),
                       ],
                       const SizedBox(height: 6),
-                      Row(
+                      Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 4,
+                        runSpacing: 4,
                         children: [
                           IconButton(
                             tooltip: 'توقف موقت',
@@ -368,7 +372,6 @@ class _TorrentPageState extends State<TorrentPage> {
                               onPressed: () => _editSessionFiles(session),
                               child: const Text('فایل‌ها'),
                             ),
-                          const Spacer(),
                           IconButton(
                             tooltip: 'توقف کامل',
                             visualDensity: VisualDensity.compact,
