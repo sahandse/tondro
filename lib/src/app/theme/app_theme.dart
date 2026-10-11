@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const accent = Color(0xFFA8FF3E);
-  static const accentDeep = Color(0xFF7ED321);
+  static const accent = Color(0xFFB6FF5A);
+  static const accentDeep = Color(0xFF86D92E);
 
   static ThemeData light() => _build(Brightness.light);
   static ThemeData dark() => _build(Brightness.dark);
@@ -25,14 +25,14 @@ class AppTheme {
         : ocean
             ? const Color(0xFF07111C)
             : dark
-                ? const Color(0xFF0B0D0F)
+                ? const Color(0xFF0A0C0E)
                 : const Color(0xFFF4F5F2);
     final surface = amoled
         ? const Color(0xFF050505)
         : ocean
             ? const Color(0xFF0D1B2A)
             : dark
-                ? const Color(0xFF121518)
+                ? const Color(0xFF121619)
                 : const Color(0xFFFFFFFF);
     final elevated = amoled
         ? const Color(0xFF101010)
@@ -115,7 +115,7 @@ class AppTheme {
         color: surface,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           side: BorderSide(color: border),
         ),
       ),
@@ -136,7 +136,7 @@ class AppTheme {
           side: WidgetStateProperty.all(BorderSide(color: border)),
           shape: WidgetStateProperty.all(
             RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
         ),
@@ -146,7 +146,7 @@ class AppTheme {
         foregroundColor: dark ? const Color(0xFF111511) : Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -157,18 +157,18 @@ class AppTheme {
         hintStyle: baseText.bodyMedium?.copyWith(color: muted),
         labelStyle: baseText.bodyMedium?.copyWith(color: muted),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
             color: dark ? darkPrimary : lightPrimary,
             width: 1.4,
           ),
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
       ),
@@ -179,7 +179,7 @@ class AppTheme {
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
           ),
           textStyle: baseText.labelLarge?.copyWith(
             fontWeight: FontWeight.w900,
@@ -192,7 +192,7 @@ class AppTheme {
           side: BorderSide(color: border),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
       ),
@@ -206,7 +206,7 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         showDragHandle: true,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
       ),
       dialogTheme: DialogThemeData(
@@ -220,7 +220,7 @@ class AppTheme {
         color: surface,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           side: BorderSide(color: border),
         ),
       ),
@@ -231,7 +231,7 @@ class AppTheme {
         actionTextColor: accentLight,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
       switchTheme: SwitchThemeData(
