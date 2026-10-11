@@ -149,6 +149,7 @@ class AppBackupService {
         'speedLimitKbps': value.speedLimitKbps,
         'maxSegments': value.maxSegments,
         'smartSegments': value.smartSegments,
+        'sequentialDownloads': value.sequentialDownloads,
         'networkProfile': value.networkProfile.name,
         'completionAction': value.completionAction.name,
         'pauseOnLowBattery': value.pauseOnLowBattery,
@@ -166,6 +167,7 @@ class AppBackupService {
         speedLimitKbps: (map['speedLimitKbps'] as num?)?.toInt() ?? 0,
         maxSegments: (map['maxSegments'] as num?)?.toInt() ?? 4,
         smartSegments: map['smartSegments'] as bool? ?? true,
+        sequentialDownloads: map['sequentialDownloads'] as bool? ?? false,
         networkProfile: NetworkProfilePreset.values.firstWhere(
           (value) => value.name == map['networkProfile'],
           orElse: () => NetworkProfilePreset.balanced,
