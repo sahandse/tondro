@@ -173,72 +173,30 @@ class _CategoryGrid extends StatelessWidget {
       );
     }).toList();
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: categories.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisExtent: 82,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
+    return SizedBox(
+      height: 42,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: categories.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final category = categories[index];
+          final count = items
+              .where(
+                (item) => detectDownloadCategory(item.fileName) == category,
+              )
+              .length;
+          return FilterChip(
+            selected: selected == category,
+            onSelected: (_) => onSelected(category),
+            avatar: Icon(_categoryIcon(category), size: 18),
+            label: Text('${categoryLabelFa(category)}  $count'),
+          );
+        },
       ),
-      itemBuilder: (context, index) {
-        final category = categories[index];
-        final count = items
-            .where(
-              (item) => detectDownloadCategory(item.fileName) == category,
-            )
-            .length;
-        final active = selected == category;
-        return InkWell(
-          onTap: () => onSelected(category),
-          borderRadius: BorderRadius.circular(14),
-          child: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: active
-                  ? Theme.of(context).colorScheme.primaryContainer
-                  : Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: Theme.of(context)
-                    .colorScheme
-                    .outline
-                    .withValues(alpha: .45),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(_categoryIcon(category), size: 20),
-                const Spacer(),
-                Text(
-                  categoryLabelFa(category),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context)
-                      .textTheme
-                      .labelMedium
-                      ?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                Text(
-                  '$count',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color:
-                            Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }
-
 class _EmptyLibrary extends StatelessWidget {
   const _EmptyLibrary();
 
