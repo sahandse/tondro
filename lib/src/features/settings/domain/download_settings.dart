@@ -38,6 +38,7 @@ class DownloadSettings {
     this.completionAction = CompletionAction.notify,
     this.pauseOnLowBattery = false,
     this.lowBatteryThreshold = 15,
+    this.sequentialDownloads = false,
   });
 
   final int maxConcurrentDownloads;
@@ -52,6 +53,7 @@ class DownloadSettings {
   final CompletionAction completionAction;
   final bool pauseOnLowBattery;
   final int lowBatteryThreshold;
+  final bool sequentialDownloads;
 
   DownloadSettings copyWith({
     int? maxConcurrentDownloads,
@@ -66,6 +68,7 @@ class DownloadSettings {
     CompletionAction? completionAction,
     bool? pauseOnLowBattery,
     int? lowBatteryThreshold,
+    bool? sequentialDownloads,
   }) {
     return DownloadSettings(
       maxConcurrentDownloads:
@@ -81,6 +84,8 @@ class DownloadSettings {
       completionAction: completionAction ?? this.completionAction,
       pauseOnLowBattery: pauseOnLowBattery ?? this.pauseOnLowBattery,
       lowBatteryThreshold: lowBatteryThreshold ?? this.lowBatteryThreshold,
+      sequentialDownloads:
+          sequentialDownloads ?? this.sequentialDownloads,
     );
   }
 }
