@@ -535,6 +535,7 @@ class _DownloadCard extends StatelessWidget {
   const _DownloadCard({
     required this.item,
     required this.locale,
+    required this.queuePosition,
     required this.onOpen,
     required this.onPause,
     required this.onResume,
@@ -545,6 +546,7 @@ class _DownloadCard extends StatelessWidget {
 
   final DownloadItem item;
   final Locale locale;
+  final int? queuePosition;
   final VoidCallback onOpen;
   final VoidCallback onPause;
   final VoidCallback onResume;
