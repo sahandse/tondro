@@ -12,11 +12,11 @@ class AppTheme {
   static ThemeData _build(Brightness brightness) {
     final dark = brightness == Brightness.dark;
     final background =
-        dark ? const Color(0xFF090D14) : const Color(0xFFF5F8FC);
+        dark ? const Color(0xFF0A0F1C) : const Color(0xFFF6F8FF);
     final surface =
-        dark ? const Color(0xFF111722) : const Color(0xFFFFFFFF);
+        dark ? const Color(0xFF111A2A) : const Color(0xFFFFFFFF);
     final elevated =
-        dark ? const Color(0xFF171F2D) : const Color(0xFFF0F4F9);
+        dark ? const Color(0xFF172338) : const Color(0xFFEEF4FF);
     final foreground =
         dark ? const Color(0xFFF6F8FC) : const Color(0xFF11151D);
     final muted =
@@ -146,6 +146,37 @@ class AppTheme {
             color: states.contains(WidgetState.selected)
                 ? (dark ? cyan : blue)
                 : muted,
+          ),
+        ),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? (dark
+                    ? const Color(0xFF153A61)
+                    : const Color(0xFFE2F1FF))
+                : surface,
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? (dark ? cyan : blue)
+                : muted,
+          ),
+          side: WidgetStateProperty.all(
+            BorderSide(color: border.withValues(alpha: .7)),
+          ),
+          textStyle: WidgetStateProperty.resolveWith(
+            (states) => baseText.labelMedium?.copyWith(
+              fontWeight: states.contains(WidgetState.selected)
+                  ? FontWeight.w800
+                  : FontWeight.w600,
+            ),
+          ),
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
           ),
         ),
       ),
