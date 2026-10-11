@@ -15,6 +15,7 @@ class SettingsStore {
   static const _completionAction = 'settings.completionAction';
   static const _pauseOnLowBattery = 'settings.pauseOnLowBattery';
   static const _lowBatteryThreshold = 'settings.lowBatteryThreshold';
+  static const _sequentialDownloads = 'settings.sequentialDownloads';
 
   Future<DownloadSettings> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -37,6 +38,7 @@ class SettingsStore {
       ),
       pauseOnLowBattery: prefs.getBool(_pauseOnLowBattery) ?? false,
       lowBatteryThreshold: prefs.getInt(_lowBatteryThreshold) ?? 15,
+      sequentialDownloads: prefs.getBool(_sequentialDownloads) ?? false,
     );
   }
 
@@ -55,6 +57,7 @@ class SettingsStore {
       prefs.setString(_completionAction, settings.completionAction.name),
       prefs.setBool(_pauseOnLowBattery, settings.pauseOnLowBattery),
       prefs.setInt(_lowBatteryThreshold, settings.lowBatteryThreshold),
+      prefs.setBool(_sequentialDownloads, settings.sequentialDownloads),
     ]);
   }
 }
