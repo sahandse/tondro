@@ -1001,9 +1001,28 @@ class DownloadsController extends ChangeNotifier {
     }
 
     final resumed = await _service.resume(id);
-    if (!resumed) {
-      await _enqueue(_items[index]);
+    if (resumed) return;
+
+    // A paused background task can remain registered even when the native
+    // downloader cannot resume it. Remove that stale task first, then create
+    // a fresh task so the item never gets stuck in queued/paused forever.
+    if (await _service.hasTask(id)) {
+      await _service.cancel(id);
+      await Future<void>.delayed(const Duration(milliseconds: 120));
     }
+
+    final liveIndex = _items.indexWhere((item) => item.id == id);
+    if (liveIndex < 0) return;
+    _items[liveIndex] = _items[liveIndex].copyWith(
+      status: DownloadStatus.queued,
+      speedBytesPerSecond: 0,
+      clearError: true,
+    );
+    notifyListeners();
+    _scheduleWidgetUpdate();
+    await _persist();
+
+    await _enqueue(_items[liveIndex]);
   }
 
   Future<void> retry(String id) => start(id);
