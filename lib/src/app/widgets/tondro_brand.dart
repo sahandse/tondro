@@ -27,9 +27,9 @@ class _TondroRibbonPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
-    const cyan = Color(0xFF54E6FF);
-    const blue = Color(0xFF1785FF);
-    const royal = Color(0xFF2356F6);
+    const cyan = Color(0xFFA8FF3E);
+    const blue = Color(0xFF7ED321);
+    const royal = Color(0xFF5A9E18);
 
     final stem = RRect.fromRectAndRadius(
       Rect.fromLTWH(
