@@ -54,7 +54,8 @@ class ThrottledDownloadService {
       var lastTick = DateTime.now();
       final stopwatch = Stopwatch()..start();
 
-      await for (final chunk in response) {
+      try {
+        await for (final chunk in response) {
         if (_canceled.contains(item.id)) {
           throw const ThrottledDownloadCanceled();
         }
@@ -82,6 +83,12 @@ class ThrottledDownloadService {
             await Future<void>.delayed(Duration(microseconds: delayMicros));
           }
         }
+        }
+      } catch (_) {
+        if (_canceled.contains(item.id)) {
+          throw const ThrottledDownloadCanceled();
+        }
+        rethrow;
       }
       await sink.flush();
     } finally {
